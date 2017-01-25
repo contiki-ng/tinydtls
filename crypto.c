@@ -46,70 +46,59 @@
 static struct dtls_cipher_context_t cipher_context;
 #ifndef WITH_CONTIKI
 static pthread_mutex_t cipher_context_mutex = PTHREAD_MUTEX_INITIALIZER;
-#endif
+#define LOCK(P) pthread_mutex_lock(P)
+#define UNLOCK(P) pthread_mutex_unlock(P)
+#define MALLOC_HANDSHAKE() malloc(sizeof(dtls_handshake_parameters_t))
+#define FREE_HANDSHAKE(H) free(H)
+#define MALLOC_SECURITY() malloc(sizeof(dtls_security_parameters_t))
+#define FREE_SECURITY(S) free(S)
+#else
+/* WITH CONTIKI */
+#include "memb.h"
+MEMB(handshake_storage, dtls_handshake_parameters_t, DTLS_HANDSHAKE_MAX);
+MEMB(security_storage, dtls_security_parameters_t, DTLS_SECURITY_MAX);
+#define LOCK(P)
+#define UNLOCK(P)
+#define MALLOC_HANDSHAKE() memb_alloc(&handshake_storage)
+#define FREE_HANDSHAKE(H)  memb_free(&handshake_storage, H)
+#define MALLOC_SECURITY()  memb_alloc(&security_storage)
+#define FREE_SECURITY(S)   memb_free(&security_storage, S)
+#endif /* WITH_CONTIKI */
 
 static struct dtls_cipher_context_t *dtls_cipher_context_get(void)
 {
-#ifndef WITH_CONTIKI
-  pthread_mutex_lock(&cipher_context_mutex);
-#endif
+  LOCK(&cipher_context_mutex);
   return &cipher_context;
 }
 
 static void dtls_cipher_context_release(void)
 {
-#ifndef WITH_CONTIKI
-  pthread_mutex_unlock(&cipher_context_mutex);
+  UNLOCK(&cipher_context_mutex);
+}
+
+void crypto_init()
+{
+#ifdef WITH_CONTIKI
+  memb_init(&handshake_storage);
+  memb_init(&security_storage);
 #endif
 }
 
-#ifndef WITH_CONTIKI
-void crypto_init()
-{
-}
-
 static dtls_handshake_parameters_t *dtls_handshake_malloc() {
-  return malloc(sizeof(dtls_handshake_parameters_t));
+  return MALLOC_HANDSHAKE();
 }
 
 static void dtls_handshake_dealloc(dtls_handshake_parameters_t *handshake) {
-  free(handshake);
+  FREE_HANDSHAKE(handshake);
 }
 
 static dtls_security_parameters_t *dtls_security_malloc() {
-  return malloc(sizeof(dtls_security_parameters_t));
+  return MALLOC_SECURITY();
 }
 
 static void dtls_security_dealloc(dtls_security_parameters_t *security) {
-  free(security);
+  FREE_SECURITY(security);
 }
-#else /* WITH_CONTIKI */
-
-#include "memb.h"
-MEMB(handshake_storage, dtls_handshake_parameters_t, DTLS_HANDSHAKE_MAX);
-MEMB(security_storage, dtls_security_parameters_t, DTLS_SECURITY_MAX);
-
-void crypto_init() {
-  memb_init(&handshake_storage);
-  memb_init(&security_storage);
-}
-
-static dtls_handshake_parameters_t *dtls_handshake_malloc() {
-  return memb_alloc(&handshake_storage);
-}
-
-static void dtls_handshake_dealloc(dtls_handshake_parameters_t *handshake) {
-  memb_free(&handshake_storage, handshake);
-}
-
-static dtls_security_parameters_t *dtls_security_malloc() {
-  return memb_alloc(&security_storage);
-}
-
-static void dtls_security_dealloc(dtls_security_parameters_t *security) {
-  memb_free(&security_storage, security);
-}
-#endif /* WITH_CONTIKI */
 
 dtls_handshake_parameters_t *dtls_handshake_new()
 {
