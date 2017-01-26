@@ -39,16 +39,6 @@
 
 #ifndef WITH_CONTIKI
 #include <pthread.h>
-#endif
-
-#define HMAC_UPDATE_SEED(Context,Seed,Length)		\
-  if (Seed) dtls_hmac_update(Context, (Seed), (Length))
-
-MEMB(handshake_storage, dtls_handshake_parameters_t, DTLS_HANDSHAKE_MAX);
-MEMB(security_storage, dtls_security_parameters_t, DTLS_SECURITY_MAX);
-
-static struct dtls_cipher_context_t cipher_context;
-#ifndef WITH_CONTIKI
 static pthread_mutex_t cipher_context_mutex = PTHREAD_MUTEX_INITIALIZER;
 #define LOCK(P) pthread_mutex_lock(P)
 #define UNLOCK(P) pthread_mutex_unlock(P)
@@ -57,6 +47,15 @@ static pthread_mutex_t cipher_context_mutex = PTHREAD_MUTEX_INITIALIZER;
 #define LOCK(P)
 #define UNLOCK(P)
 #endif /* WITH_CONTIKI */
+
+#define HMAC_UPDATE_SEED(Context,Seed,Length)		\
+  if (Seed) dtls_hmac_update(Context, (Seed), (Length))
+
+MEMB(handshake_storage, dtls_handshake_parameters_t, DTLS_HANDSHAKE_MAX);
+MEMB(security_storage, dtls_security_parameters_t, DTLS_SECURITY_MAX);
+
+static struct dtls_cipher_context_t cipher_context;
+
 
 static struct dtls_cipher_context_t *dtls_cipher_context_get(void)
 {

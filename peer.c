@@ -18,27 +18,8 @@
 #include "global.h"
 #include "peer.h"
 #include "dtls_debug.h"
-
-#ifndef WITH_CONTIKI
-void peer_init()
-{
-}
-
-static inline dtls_peer_t *
-dtls_malloc_peer() {
-  return (dtls_peer_t *)malloc(sizeof(dtls_peer_t));
-}
-
-void
-dtls_free_peer(dtls_peer_t *peer) {
-  dtls_handshake_free(peer->handshake_params);
-  dtls_security_free(peer->security_params[0]);
-  dtls_security_free(peer->security_params[1]);
-  free(peer);
-}
-#else /* WITH_CONTIKI */
-
 #include "memb.h"
+
 MEMB(peer_storage, dtls_peer_t, DTLS_PEER_MAX);
 
 void
@@ -58,7 +39,6 @@ dtls_free_peer(dtls_peer_t *peer) {
   dtls_security_free(peer->security_params[1]);
   memb_free(&peer_storage, peer);
 }
-#endif /* WITH_CONTIKI */
 
 dtls_peer_t *
 dtls_new_peer(const session_t *session) {

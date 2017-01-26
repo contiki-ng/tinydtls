@@ -29,22 +29,7 @@
 #endif
 #endif
 
-#ifndef WITH_CONTIKI
-#include <stdlib.h>
-
-static inline netq_t *
-netq_malloc_node(size_t size) {
-  return (netq_t *)malloc(sizeof(netq_t) + size);
-}
-
-static inline void
-netq_free_node(netq_t *node) {
-  free(node);
-}
-
-#else /* WITH_CONTIKI */
 #include "memb.h"
-
 MEMB(netq_storage, netq_t, NETQ_MAXCNT);
 
 static inline netq_t *
@@ -61,9 +46,8 @@ void
 netq_init() {
   memb_init(&netq_storage);
 }
-#endif /* WITH_CONTIKI */
 
-int 
+int
 netq_insert_node(netq_t **queue, netq_t *node) {
   netq_t *p;
 

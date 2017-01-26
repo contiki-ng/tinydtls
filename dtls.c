@@ -45,6 +45,8 @@
 #include "session.h"
 #include "prng.h"
 
+#include "support.h"
+
 #ifdef WITH_SHA256
 #  include "sha2/sha2.h"
 #endif
@@ -149,33 +151,6 @@ static const unsigned char cert_asn1_header[] = {
       0x03, 0x42, 0x00, /* BIT STRING, length 66 bytes, 0 bits unused */
          0x04 /* uncompressed, followed by the r und s values of the public key */
 };
-
-#ifdef WITH_CONTIKI
-PROCESS(dtls_retransmit_process, "DTLS retransmit process");
-
-static dtls_context_t the_dtls_context;
-
-static inline dtls_context_t *
-malloc_context() {
-  return &the_dtls_context;
-}
-
-static inline void
-free_context(dtls_context_t *context) {
-}
-
-#else /* WITH_CONTIKI */
-
-static inline dtls_context_t *
-malloc_context() {
-  return (dtls_context_t *)malloc(sizeof(dtls_context_t));
-}
-
-static inline void
-free_context(dtls_context_t *context) {
-  free(context);
-}
-#endif
 
 void
 dtls_init() {
@@ -1502,6 +1477,8 @@ dtls_send_multi(dtls_context_t *ctx, dtls_peer_t *peer,
 #ifdef WITH_CONTIKI
       } else {
 	/* must set timer within the context of the retransmit process */
+        tinydtls_set_retransmit_timer(n->timeout);
+
 	PROCESS_CONTEXT_BEGIN(&dtls_retransmit_process);
 	etimer_set(&ctx->retransmit_timer, n->timeout);
 	PROCESS_CONTEXT_END(&dtls_retransmit_process);

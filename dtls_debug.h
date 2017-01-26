@@ -80,6 +80,8 @@ void dsrv_log(log_t level, char *format, ...);
 #endif
 
 #ifndef NDEBUG
+size_t dsrv_print_addr(const session_t *addr, char *buf, size_t len);
+
 /** dumps packets in usual hexdump format */
 void hexdump(const unsigned char *packet, int length);
 

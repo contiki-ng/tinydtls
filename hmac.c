@@ -29,23 +29,8 @@
 
 #include "dtls_debug.h"
 #include "hmac.h"
-
-/* use malloc()/free() on platforms other than Contiki */
-#ifndef WITH_CONTIKI
-#include <stdlib.h>
-
-static inline dtls_hmac_context_t *
-dtls_hmac_context_new() {
-  return (dtls_hmac_context_t *)malloc(sizeof(dtls_hmac_context_t));
-}
-
-static inline void
-dtls_hmac_context_free(dtls_hmac_context_t *ctx) {
-  free(ctx);
-}
-
-#else /* WITH_CONTIKI */
 #include "memb.h"
+
 MEMB(hmac_context_storage, dtls_hmac_context_t, DTLS_HASH_MAX);
 
 static inline dtls_hmac_context_t *
@@ -62,7 +47,7 @@ void
 dtls_hmac_storage_init() {
   memb_init(&hmac_context_storage);
 }
-#endif /* WITH_CONTIKI */
+
 
 void
 dtls_hmac_update(dtls_hmac_context_t *ctx,
