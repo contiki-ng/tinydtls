@@ -35,6 +35,7 @@
 #include "ecc/ecc.h"
 #include "prng.h"
 #include "netq.h"
+#include "memb.h"
 
 #ifndef WITH_CONTIKI
 #include <pthread.h>
@@ -43,26 +44,18 @@
 #define HMAC_UPDATE_SEED(Context,Seed,Length)		\
   if (Seed) dtls_hmac_update(Context, (Seed), (Length))
 
+MEMB(handshake_storage, dtls_handshake_parameters_t, DTLS_HANDSHAKE_MAX);
+MEMB(security_storage, dtls_security_parameters_t, DTLS_SECURITY_MAX);
+
 static struct dtls_cipher_context_t cipher_context;
 #ifndef WITH_CONTIKI
 static pthread_mutex_t cipher_context_mutex = PTHREAD_MUTEX_INITIALIZER;
 #define LOCK(P) pthread_mutex_lock(P)
 #define UNLOCK(P) pthread_mutex_unlock(P)
-#define MALLOC_HANDSHAKE() malloc(sizeof(dtls_handshake_parameters_t))
-#define FREE_HANDSHAKE(H) free(H)
-#define MALLOC_SECURITY() malloc(sizeof(dtls_security_parameters_t))
-#define FREE_SECURITY(S) free(S)
 #else
 /* WITH CONTIKI */
-#include "memb.h"
-MEMB(handshake_storage, dtls_handshake_parameters_t, DTLS_HANDSHAKE_MAX);
-MEMB(security_storage, dtls_security_parameters_t, DTLS_SECURITY_MAX);
 #define LOCK(P)
 #define UNLOCK(P)
-#define MALLOC_HANDSHAKE() memb_alloc(&handshake_storage)
-#define FREE_HANDSHAKE(H)  memb_free(&handshake_storage, H)
-#define MALLOC_SECURITY()  memb_alloc(&security_storage)
-#define FREE_SECURITY(S)   memb_free(&security_storage, S)
 #endif /* WITH_CONTIKI */
 
 static struct dtls_cipher_context_t *dtls_cipher_context_get(void)
@@ -78,26 +71,24 @@ static void dtls_cipher_context_release(void)
 
 void crypto_init()
 {
-#ifdef WITH_CONTIKI
   memb_init(&handshake_storage);
   memb_init(&security_storage);
-#endif
 }
 
 static dtls_handshake_parameters_t *dtls_handshake_malloc() {
-  return MALLOC_HANDSHAKE();
+  return memb_alloc(&handshake_storage);
 }
 
 static void dtls_handshake_dealloc(dtls_handshake_parameters_t *handshake) {
-  FREE_HANDSHAKE(handshake);
+  memb_free(&handshake_storage, handshake);
 }
 
 static dtls_security_parameters_t *dtls_security_malloc() {
-  return MALLOC_SECURITY();
+  return memb_alloc(&security_storage);
 }
 
 static void dtls_security_dealloc(dtls_security_parameters_t *security) {
-  FREE_SECURITY(security);
+  memb_free(&security_storage, security);
 }
 
 dtls_handshake_parameters_t *dtls_handshake_new()
