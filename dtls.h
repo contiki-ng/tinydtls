@@ -305,7 +305,8 @@ int dtls_write(struct dtls_context_t *ctx, session_t *session,
  *  of the next scheduled retransmission, or @c 0 when no packets are
  *  waiting.
  */
-void dtls_check_retransmit(dtls_context_t *context, clock_time_t *next);
+void dtls_check_retransmit(dtls_context_t *context, clock_time_t *next,
+                           int all);
 
 #define DTLS_COOKIE_LENGTH 16
 

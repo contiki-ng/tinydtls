@@ -257,3 +257,31 @@ void dtls_ticks(dtls_tick_t *t) {
 #error "clock not implemented"
 #endif
 }
+
+int
+dtls_get_random(unsigned long *rand)
+{
+  FILE *urandom = fopen("/dev/urandom", "r");
+  unsigned char buf[sizeof(unsigned long)];
+
+  if (!urandom) {
+    dtls_emerg("cannot initialize PRNG\n");
+    return 0;
+  }
+
+  if (fread(buf, 1, sizeof(buf), urandom) != sizeof(buf)) {
+    dtls_emerg("cannot initialize PRNG\n");
+    return 0;
+  }
+
+  fclose(urandom);
+
+  *rand = (unsigned long)*buf;
+  return 1;
+}
+
+void
+dtls_set_retransmit_timer(dtls_context_t *ctx, unsigned int timeout)
+{
+/* Do nothing for now ... */
+}

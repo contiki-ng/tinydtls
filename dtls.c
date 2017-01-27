@@ -1474,17 +1474,9 @@ dtls_send_multi(dtls_context_t *ctx, dtls_peer_t *peer,
       if (!netq_insert_node(&ctx->sendqueue, n)) {
 	dtls_warn("cannot add packet to retransmit buffer\n");
 	netq_node_free(n);
-#ifdef WITH_CONTIKI
       } else {
-	/* must set timer within the context of the retransmit process */
-        tinydtls_set_retransmit_timer(n->timeout);
-
-	PROCESS_CONTEXT_BEGIN(&dtls_retransmit_process);
-	etimer_set(&ctx->retransmit_timer, n->timeout);
-	PROCESS_CONTEXT_END(&dtls_retransmit_process);
-#else /* WITH_CONTIKI */
+        dtls_set_retransmit_timer(ctx, n->timeout);
 	dtls_debug("copied to sendqueue\n");
-#endif /* WITH_CONTIKI */
       }
     } else 
       dtls_warn("retransmit buffer full\n");
@@ -3779,29 +3771,15 @@ dtls_context_t *
 dtls_new_context(void *app_data) {
   dtls_context_t *c;
   dtls_tick_t now;
-#ifndef WITH_CONTIKI
-  FILE *urandom = fopen("/dev/urandom", "r");
-  unsigned char buf[sizeof(unsigned long)];
-#endif /* WITH_CONTIKI */
+  unsigned long rand;
+
+  if (!dtls_get_random(&rand)) {
+    return NULL;
+  }
 
   dtls_ticks(&now);
-#ifdef WITH_CONTIKI
-  /* FIXME: need something better to init PRNG here */
-  dtls_prng_init(now);
-#else /* WITH_CONTIKI */
-  if (!urandom) {
-    dtls_emerg("cannot initialize PRNG\n");
-    return NULL;
-  }
 
-  if (fread(buf, 1, sizeof(buf), urandom) != sizeof(buf)) {
-    dtls_emerg("cannot initialize PRNG\n");
-    return NULL;
-  }
-
-  fclose(urandom);
-  dtls_prng_init((unsigned long)*buf);
-#endif /* WITH_CONTIKI */
+  dtls_prng_init(rand);
 
   c = malloc_context();
   if (!c)
@@ -3993,7 +3971,7 @@ dtls_stop_retransmission(dtls_context_t *context, dtls_peer_t *peer) {
 }
 
 void
-dtls_check_retransmit(dtls_context_t *context, clock_time_t *next) {
+dtls_check_retransmit(dtls_context_t *context, clock_time_t *next, int all) {
   dtls_tick_t now;
   netq_t *node = netq_head(&context->sendqueue);
 
@@ -4002,6 +3980,8 @@ dtls_check_retransmit(dtls_context_t *context, clock_time_t *next) {
     netq_pop_first(&context->sendqueue);
     dtls_retransmit(context, node);
     node = netq_head(&context->sendqueue);
+    /* Check if we chould send out multiple or not */
+    if(!all) break;
   }
 
   if (next) {
@@ -4016,7 +3996,7 @@ dtls_check_retransmit(dtls_context_t *context, clock_time_t *next) {
 PROCESS_THREAD(dtls_retransmit_process, ev, data)
 {
   clock_time_t now;
-  netq_t *node;
+  clock_time_t next;
 
   PROCESS_BEGIN();
 
@@ -4024,30 +4004,23 @@ PROCESS_THREAD(dtls_retransmit_process, ev, data)
 
   while(1) {
     PROCESS_YIELD();
-    if (ev == PROCESS_EVENT_TIMER) {
-      if (etimer_expired(&the_dtls_context.retransmit_timer)) {
-	
-	node = netq_head(&the_dtls_context.sendqueue);
-	
-	now = clock_time();
-	if (node && node->t <= now) {
-	  dtls_retransmit(&the_dtls_context, node);
+    if (ev == PROCESS_EVENT_TIMER &&
+        etimer_expired(&the_dtls_context.retransmit_timer)) {
 
-          netq_node_free(node);
-	  node = netq_head(&the_dtls_context.sendqueue);
-	}
+      now = clock_time();
+      /* Just one retransmission per timer scheduling */
+      dtls_check_retransmit(&the_dtls_context, &next, 0);
 
-	/* need to set timer to some value even if no nextpdu is available */
-	if (node) {
-	  etimer_set(&the_dtls_context.retransmit_timer, 
-		     node->t <= now ? 1 : node->t - now);
-	} else {
-	  etimer_set(&the_dtls_context.retransmit_timer, 0xFFFF);
-	}
-      } 
+      /* need to set timer to some value even if no nextpdu is available */
+      if (next != 0) {
+        etimer_set(&the_dtls_context.retransmit_timer,
+                   next <= now ? 1 : next - now);
+      } else {
+        etimer_set(&the_dtls_context.retransmit_timer, 0xFFFF);
+      }
     }
   }
-  
+
   PROCESS_END();
 }
 #endif /* WITH_CONTIKI */
