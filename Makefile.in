@@ -23,6 +23,13 @@ SHELL = /bin/sh
 MKDIR = mkdir
 ETAGS = @ETAGS@
 
+# should probably be from the autoconf system.
+ifeq ($(DTLS_SUPPORT), )
+DTSL_SUPPORT=posix
+endif
+support=${DTLS_SUPPORT}
+
+
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 abs_builddir = @abs_builddir@
@@ -34,8 +41,8 @@ package = @PACKAGE_TARNAME@-@PACKAGE_VERSION@
 install := cp
 
 # files and flags
-SOURCES:= dtls.c crypto.c ccm.c hmac.c netq.c peer.c dtls_time.c session.c dtls_debug.c
-SUB_OBJECTS:=aes/rijndael.o @OPT_OBJS@
+SOURCES:= dtls.c crypto.c ccm.c hmac.c netq.c peer.c dtls_debug.c
+SUB_OBJECTS:=aes/rijndael.o  ${support}/support.o @OPT_OBJS@
 OBJECTS:= $(patsubst %.c, %.o, $(SOURCES)) $(SUB_OBJECTS)
 HEADERS:=dtls.h hmac.h dtls_debug.h dtls_config.h uthash.h numeric.h crypto.h global.h ccm.h \
  netq.h alert.h utlist.h prng.h peer.h state.h dtls_time.h session.h \
