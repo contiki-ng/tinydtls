@@ -7,6 +7,9 @@
 #include "../dtls_debug.h"
 #include "../dtls_config.h"
 #include "../dtls_time.h"
+#ifdef HAVE_ASSERT_H
+#include <assert.h>
+#endif
 
 #include <arpa/inet.h>
 #include <stdarg.h>
@@ -205,30 +208,6 @@ dtls_dsrv_hexdump_log(log_t level, const char *name, const unsigned char *buf, s
   fflush(log_fd);
 }
 
-int
-_dtls_address_equals_impl(const session_t *a,
-			  const session_t *b) {
-  if (a->ifindex != b->ifindex ||
-      a->size != b->size || a->addr.sa.sa_family != b->addr.sa.sa_family)
-    return 0;
-
-  /* need to compare only relevant parts of sockaddr_in6 */
- switch (a->addr.sa.sa_family) {
- case AF_INET:
-   return 
-     a->addr.sin.sin_port == b->addr.sin.sin_port &&
-     memcmp(&a->addr.sin.sin_addr, &b->addr.sin.sin_addr,
-	    sizeof(struct in_addr)) == 0;
- case AF_INET6:
-   return a->addr.sin6.sin6_port == b->addr.sin6.sin6_port &&
-     memcmp(&a->addr.sin6.sin6_addr, &b->addr.sin6.sin6_addr,
-	    sizeof(struct in6_addr)) == 0;
- default: /* fall through and signal error */
-   ;
- }
- return 0;
-}
-
 /* --------- time support ----------- */
 
 time_t dtls_clock_offset;
@@ -284,4 +263,44 @@ void
 dtls_set_retransmit_timer(dtls_context_t *ctx, unsigned int timeout)
 {
 /* Do nothing for now ... */
+}
+
+/* Implementation of session functions */
+void
+dtls_session_init(session_t *sess) {
+  assert(sess);
+  memset(sess, 0, sizeof(session_t));
+  sess->size = sizeof(sess->addr);
+}
+
+int
+dtls_session_equals(const session_t *a, const session_t *b) {
+  assert(a); assert(b);
+
+  if (a->ifindex != b->ifindex ||
+      a->size != b->size || a->addr.sa.sa_family != b->addr.sa.sa_family)
+    return 0;
+
+  /* need to compare only relevant parts of sockaddr_in6 */
+  switch (a->addr.sa.sa_family) {
+  case AF_INET:
+    return
+     a->addr.sin.sin_port == b->addr.sin.sin_port &&
+     memcmp(&a->addr.sin.sin_addr, &b->addr.sin.sin_addr,
+	    sizeof(struct in_addr)) == 0;
+  case AF_INET6:
+    return a->addr.sin6.sin6_port == b->addr.sin6.sin6_port &&
+      memcmp(&a->addr.sin6.sin6_addr, &b->addr.sin6.sin6_addr,
+             sizeof(struct in6_addr)) == 0;
+  default: /* fall through and signal error */
+    ;
+  }
+  return 0;
+}
+
+
+/* The init */
+void dtls_support_init(void)
+{
+  /* setup whatever */
 }

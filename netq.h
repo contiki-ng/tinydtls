@@ -100,6 +100,8 @@ void netq_remove(netq_t **queue, netq_t *p);
  */
 netq_t *netq_pop_first(netq_t **queue);
 
+void netq_init(void);
+
 /**@}*/
 
 #endif /* _DTLS_NETQ_H_ */

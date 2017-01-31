@@ -158,6 +158,7 @@ dtls_init() {
   crypto_init();
   netq_init();
   peer_init();
+  dtls_support_init();
 }
 
 /* Calls cb_alert() with given arguments if defined, otherwise an
@@ -3787,14 +3788,8 @@ dtls_new_context(void *app_data) {
 
   memset(c, 0, sizeof(dtls_context_t));
   c->app = app_data;
-  
-#ifdef WITH_CONTIKI
-  process_start(&dtls_retransmit_process, (char *)c);
-  PROCESS_CONTEXT_BEGIN(&dtls_retransmit_process);
-  /* the retransmit timer must be initialized to some large value */
-  etimer_set(&c->retransmit_timer, 0xFFFF);
-  PROCESS_CONTEXT_END(&coap_retransmit_process);
-#endif /* WITH_CONTIKI */
+
+  dtls_set_retransmit_timer(c, 0xffff);
 
   if (dtls_prng(c->cookie_secret, DTLS_COOKIE_SECRET_LENGTH))
     c->cookie_secret_age = now;
@@ -3988,39 +3983,3 @@ dtls_check_retransmit(dtls_context_t *context, clock_time_t *next, int all) {
     *next = node ? node->t : 0;
   }
 }
-
-#ifdef WITH_CONTIKI
-/*---------------------------------------------------------------------------*/
-/* message retransmission */
-/*---------------------------------------------------------------------------*/
-PROCESS_THREAD(dtls_retransmit_process, ev, data)
-{
-  clock_time_t now;
-  clock_time_t next;
-
-  PROCESS_BEGIN();
-
-  dtls_debug("Started DTLS retransmit process\r\n");
-
-  while(1) {
-    PROCESS_YIELD();
-    if (ev == PROCESS_EVENT_TIMER &&
-        etimer_expired(&the_dtls_context.retransmit_timer)) {
-
-      now = clock_time();
-      /* Just one retransmission per timer scheduling */
-      dtls_check_retransmit(&the_dtls_context, &next, 0);
-
-      /* need to set timer to some value even if no nextpdu is available */
-      if (next != 0) {
-        etimer_set(&the_dtls_context.retransmit_timer,
-                   next <= now ? 1 : next - now);
-      } else {
-        etimer_set(&the_dtls_context.retransmit_timer, 0xFFFF);
-      }
-    }
-  }
-
-  PROCESS_END();
-}
-#endif /* WITH_CONTIKI */
