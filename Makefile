@@ -27,6 +27,7 @@ SOURCES = dtls.c crypto.c ccm.c hmac.c netq.c peer.c dtls_debug.c
 SOURCES+= aes/rijndael.c ecc/ecc.c sha2/sha2.c $(DTLS_SUPPORT)/dtls-support.c
 DTLS_DIRS:= aes ecc sta2 $(DTLS_SUPPORT)
 OBJECTS:= $(SOURCES:.c=.o)
+# CFLAGS:=-Wall -pedantic -std=c99 -g -O2 -I. ${addprefix -I,$(DTLS_DIRS)}
 CFLAGS:=-Wall -std=c99 -g -O2 -I. ${addprefix -I,$(DTLS_DIRS)}
 CPPFLAGS:= -DDTLSv12 -DWITH_SHA256 -DDTLS_CHECK_CONTENTTYPE
 LIB:=libtinydtls.a

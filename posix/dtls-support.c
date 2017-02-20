@@ -141,6 +141,7 @@ dsrv_print_addr(const session_t *addr, char *buf, size_t len) {
 
 #endif /* NDEBUG */
 
+#ifdef HAVE_VPRINTF
 void
 dsrv_log(log_t level, char *format, ...) {
   static char timebuf[32];
@@ -163,6 +164,7 @@ dsrv_log(log_t level, char *format, ...) {
   va_end(ap);
   fflush(log_fd);
 }
+#endif /* HAVE_VPRINTF */
 
 void
 dtls_dsrv_hexdump_log(log_t level, const char *name, const unsigned char *buf, size_t length, int extend) {
