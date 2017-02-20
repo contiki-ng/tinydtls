@@ -1,6 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+//#include "dtls_debug.h"
+#include "dtls_config.h"
+#include "numeric.h"
+#include "ccm.h"
+
+#include "ccm-testdata.c"
+
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif
@@ -10,13 +18,6 @@
 #include "contiki-lib.h"
 #include "contiki-net.h"
 #endif /* WITH_CONTIKI */
-
-//#include "dtls_debug.h"
-#include "dtls_config.h"
-#include "numeric.h"
-#include "ccm.h"
-
-#include "ccm-testdata.c"
 
 #ifndef HAVE_FLS
 int fls(unsigned int i) {

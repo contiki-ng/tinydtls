@@ -14,13 +14,13 @@
 /* #undef HAVE_ARPA_INET_H */
 
 /* Define to 1 if you have the <assert.h> header file. */
-/* #undef HAVE_ASSERT_H */
+#define HAVE_ASSERT_H 1
 
 /* Define to 1 if you have the <fcntl.h> header file. */
 /* #undef HAVE_FCNTL_H */
 
 /* Define to 1 if you have the `fls' function. */
-/* #undef HAVE_FLS */
+#define HAVE_FLS 1
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 /* #undef HAVE_INTTYPES_H */
