@@ -4,12 +4,6 @@ core
 *.gz
 *.cap
 *.pcap
-Makefile
-autom4te.cache/
-config.h
-config.log
-config.status
-configure
 doc/Doxyfile
 doc/doxygen.out
 doc/html/
@@ -20,9 +14,7 @@ tests/dtls-server
 tests/prf-test
 tinydtls-0.6.0
 ./tinydtls-0.6.0/
-TAGS
 *.patch
-.gitignore
 ecc/testecc
 ecc/testfield
 *.d
@@ -30,8 +22,6 @@ ecc/testfield
 *.elf
 *.map
 obj_*
-tinydtls.h
-dtls_config.h
 *.apple2enh
 *.atarixl
 *.avr-atmega128rfa1

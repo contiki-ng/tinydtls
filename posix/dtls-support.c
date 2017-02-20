@@ -3,10 +3,10 @@
 
 #include "memb.h"
 #include <stdlib.h>
-#include "../support.h"
-#include "../dtls_debug.h"
-#include "../dtls_config.h"
-#include "../dtls_time.h"
+#include "dtls-support.h"
+#include "dtls_debug.h"
+#include "dtls_config.h"
+#include "dtls_time.h"
 #ifdef HAVE_ASSERT_H
 #include <assert.h>
 #endif

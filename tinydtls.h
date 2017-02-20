@@ -1,3 +1,4 @@
+/* tinydtls.h.  Generated from tinydtls.h.in by configure.  */
 /*******************************************************************************
  *
  * Copyright (c) 2011, 2012, 2013, 2014, 2015 Olaf Bergmann (TZI) and others.
@@ -24,12 +25,14 @@
 #define _DTLS_TINYDTLS_H_
 
 /** Defined to 1 if tinydtls is built with support for ECC */
-#undef DTLS_ECC
+#define DTLS_ECC 1
 
 /** Defined to 1 if tinydtls is built with support for PSK */
-#undef DTLS_PSK
+#define DTLS_PSK 1
 
 /** Defined to 1 if tinydtls is built for Contiki OS */
-#undef WITH_CONTIKI
+//#define WITH_CONTIKI 1
+
+#define DTLS_PEERS_NOHASH 1
 
 #endif /* _DTLS_TINYDTLS_H_ */

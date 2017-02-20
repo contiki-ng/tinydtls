@@ -45,7 +45,7 @@
 #include "session.h"
 #include "prng.h"
 
-#include "support.h"
+#include "dtls-support.h"
 
 #ifdef WITH_SHA256
 #  include "sha2/sha2.h"
