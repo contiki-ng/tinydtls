@@ -21,9 +21,10 @@
 #include <stdlib.h>		/* for rand() and srand() */
 #include <stdint.h>
 
+#include "tinydtls.h"
+
 #include "aes/rijndael.h"
 
-#include "global.h"
 #include "state.h"
 #include "numeric.h"
 #include "hmac.h"

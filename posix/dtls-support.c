@@ -1,11 +1,11 @@
 /* POSIX support for memb alloc / free and other functions needed to
    run the tinyDTSL applications */
 
-#include "memb.h"
+#include "tinydtls.h"
+#include "lib/memb.h"
 #include <stdlib.h>
 #include "dtls-support.h"
 #include "dtls_debug.h"
-#include "dtls_config.h"
 #include "dtls_time.h"
 #ifdef HAVE_ASSERT_H
 #include <assert.h>

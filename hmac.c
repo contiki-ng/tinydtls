@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "dtls_config.h"
+#include "tinydtls.h"
 
 #ifdef HAVE_ASSERT_H
 #include <assert.h>
@@ -29,7 +29,7 @@
 
 #include "dtls_debug.h"
 #include "hmac.h"
-#include "memb.h"
+#include "lib/memb.h"
 
 MEMB(hmac_context_storage, dtls_hmac_context_t, DTLS_HASH_MAX);
 
@@ -44,7 +44,8 @@ dtls_hmac_context_free(dtls_hmac_context_t *ctx) {
 }
 
 void
-dtls_hmac_storage_init() {
+dtls_hmac_storage_init(void)
+{
   memb_init(&hmac_context_storage);
 }
 

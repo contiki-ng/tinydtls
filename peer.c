@@ -15,10 +15,10 @@
  *
  *******************************************************************************/
 
-#include "global.h"
+#include "tinydtls.h"
 #include "peer.h"
 #include "dtls_debug.h"
-#include "memb.h"
+#include "lib/memb.h"
 
 MEMB(peer_storage, dtls_peer_t, DTLS_PEER_MAX);
 

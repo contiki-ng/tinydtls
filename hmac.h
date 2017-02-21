@@ -20,7 +20,7 @@
 
 #include <sys/types.h>
 
-#include "global.h"
+#include "tinydtls.h"
 
 #ifdef WITH_SHA256
 /** Aaron D. Gifford's implementation of SHA256
@@ -48,7 +48,7 @@ dtls_hash_finalize(unsigned char *buf, dtls_hash_t ctx) {
 }
 #endif /* WITH_SHA256 */
 
-static inline void dtls_hmac_storage_init(void);
+void dtls_hmac_storage_init(void);
 
 /**
  * \defgroup HMAC Keyed-Hash Message Authentication Code (HMAC)

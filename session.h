@@ -20,7 +20,6 @@
 #include <string.h>
 
 #include "tinydtls.h"
-#include "global.h"
 
 #ifdef WITH_CONTIKI
 #include "ip/uip.h"

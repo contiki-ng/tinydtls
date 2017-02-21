@@ -1,5 +1,3 @@
-/* dtls_config.h.  Generated from dtls_config.h.in by configure.  */
-/* dtls_config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define if building universal (internal helper macro) */
 /* #undef AC_APPLE_UNIVERSAL_BUILD */
@@ -118,3 +116,37 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 /* #undef STDC_HEADERS */
+
+#define SHA2_USE_INTTYPES_H 1
+
+/* global constants for constrained devices */
+#ifndef DTLS_PEER_MAX
+/** The maximum number DTLS peers (i.e. sessions). */
+#define DTLS_PEER_MAX 1
+#endif
+
+#ifndef DTLS_HANDSHAKE_MAX
+/** The maximum number of concurrent DTLS handshakes. */
+#define DTLS_HANDSHAKE_MAX 1
+#endif
+
+#ifndef DTLS_SECURITY_MAX
+/** The maximum number of concurrently used cipher keys */
+#define DTLS_SECURITY_MAX (DTLS_PEER_MAX + DTLS_HANDSHAKE_MAX)
+#endif
+
+#ifndef DTLS_HASH_MAX
+/** The maximum number of hash functions that can be used in parallel. */
+#define DTLS_HASH_MAX (3 * DTLS_PEER_MAX)
+#endif
+
+/** Defined to 1 if tinydtls is built with support for ECC */
+#define DTLS_ECC 1
+
+/** Defined to 1 if tinydtls is built with support for PSK */
+#define DTLS_PSK 1
+
+/** do not use uthash hash tables */
+/* #define DTLS_PEERS_NOHASH 1 */
+
+#define DTLS_CHECK_CONTENTTYPE 1

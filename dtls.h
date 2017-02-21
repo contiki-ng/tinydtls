@@ -35,7 +35,7 @@
 #include "crypto.h"
 #include "hmac.h"
 
-#include "global.h"
+#include "tinydtls.h"
 #include "dtls_time.h"
 
 #ifndef DTLSv12

@@ -29,7 +29,7 @@ DTLS_DIRS:= aes ecc sta2 $(DTLS_SUPPORT)
 OBJECTS:= $(SOURCES:.c=.o)
 # CFLAGS:=-Wall -pedantic -std=c99 -g -O2 -I. ${addprefix -I,$(DTLS_DIRS)}
 CFLAGS:=-Wall -std=c99 -g -O2 -I. ${addprefix -I,$(DTLS_DIRS)}
-CPPFLAGS:= -DDTLSv12 -DWITH_SHA256 -DDTLS_CHECK_CONTENTTYPE
+CPPFLAGS:=
 LIB:=libtinydtls.a
 LDFLAGS:=
 ARFLAGS:=cru

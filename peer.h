@@ -26,7 +26,6 @@
 #include <sys/types.h>
 
 #include "tinydtls.h"
-#include "global.h"
 #include "session.h"
 
 #include "state.h"

@@ -15,7 +15,7 @@
  *
  *******************************************************************************/
 
-#include "dtls_config.h"
+#include "tinydtls.h"
 #include "dtls_debug.h"
 #include "netq.h"
 #include "utlist.h"
@@ -29,7 +29,7 @@
 #endif
 #endif
 
-#include "memb.h"
+#include "lib/memb.h"
 MEMB(netq_storage, netq_t, NETQ_MAXCNT);
 
 static inline netq_t *

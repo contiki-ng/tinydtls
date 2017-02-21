@@ -16,9 +16,8 @@
 #include <netdb.h>
 #include <signal.h>
 
-#include "global.h" 
 #include "dtls_debug.h"
-#include "dtls.h" 
+#include "dtls.h"
 
 #define DEFAULT_PORT 20220
 
@@ -527,4 +526,3 @@ main(int argc, char **argv) {
   dtls_free_context(orig_dtls_context);
   exit(0);
 }
-

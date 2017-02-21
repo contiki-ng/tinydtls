@@ -26,7 +26,7 @@
 #include <sys/types.h>
 #include <stdint.h>
 
-#include "global.h"
+#include "tinydtls.h"
 #include "hmac.h"
 
 typedef enum { 

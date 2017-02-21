@@ -17,8 +17,7 @@
 
 #include <string.h>
 
-#include "dtls_config.h"
-#include "global.h"
+#include "tinydtls.h"
 #include "numeric.h"
 #include "ccm.h"
 
@@ -295,7 +294,7 @@ dtls_ccm_decrypt_message(rijndael_ctx *ctx, size_t M, size_t L,
   memxor(msg, S, M);
 
   /* return length if MAC is valid, otherwise continue with error handling */
-  if (equals(X, msg, M))
+  if (dtls_equals(X, msg, M))
     return len - M;
   
  error:

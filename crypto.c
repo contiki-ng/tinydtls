@@ -18,7 +18,6 @@
 #include <stdio.h>
 
 #include "tinydtls.h"
-#include "dtls_config.h"
 
 #ifdef HAVE_ASSERT_H
 #include <assert.h>
@@ -26,7 +25,6 @@
 #define assert(x)
 #endif
 
-#include "global.h"
 #include "dtls_debug.h"
 #include "numeric.h"
 #include "dtls.h"
@@ -35,7 +33,7 @@
 #include "ecc/ecc.h"
 #include "prng.h"
 #include "netq.h"
-#include "memb.h"
+#include "lib/memb.h"
 
 #ifndef WITH_CONTIKI
 #include <pthread.h>
@@ -541,4 +539,3 @@ error:
   dtls_cipher_context_release();
   return ret;
 }
-

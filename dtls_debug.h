@@ -20,8 +20,7 @@
 
 #include <stdlib.h>
 
-#include "dtls_config.h"
-#include "global.h"
+#include "tinydtls.h"
 #include "session.h"
 
 #ifdef WITH_CONTIKI

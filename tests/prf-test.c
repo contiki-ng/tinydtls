@@ -2,7 +2,6 @@
 
 #include "tinydtls.h"
 #include "dtls_debug.h"
-#include "global.h"
 #include "crypto.h"
 
 int 

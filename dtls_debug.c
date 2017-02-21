@@ -16,7 +16,6 @@
  *******************************************************************************/
 
 #include "tinydtls.h"
-#include "dtls_config.h"
 
 #if defined(HAVE_ASSERT_H) && !defined(assert)
 #include <assert.h>
@@ -25,15 +24,10 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#ifdef HAVE_ARPA_INET_H
-#include <arpa/inet.h>
-#endif
-
 #ifdef HAVE_TIME_H
 #include <time.h>
 #endif
 
-#include "global.h"
 #include "dtls_debug.h"
 
 #ifndef min

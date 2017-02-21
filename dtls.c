@@ -18,7 +18,6 @@
  *******************************************************************************/
 
 #include "tinydtls.h"
-#include "dtls_config.h"
 #include "dtls_time.h"
 
 #include <stdio.h>
@@ -28,7 +27,6 @@
 #endif
 #ifndef WITH_CONTIKI
 #include <stdlib.h>
-#include "global.h"
 #endif /* WITH_CONTIKI */
 
 #include "utlist.h"
@@ -40,6 +38,7 @@
 #include "numeric.h"
 #include "netq.h"
 #include "dtls.h"
+#include "hmac.h"
 
 #include "alert.h"
 #include "session.h"
@@ -156,6 +155,7 @@ void
 dtls_init() {
   dtls_clock_init();
   crypto_init();
+  dtls_hmac_storage_init();
   netq_init();
   peer_init();
   dtls_support_init();
@@ -1165,7 +1165,7 @@ check_finished(dtls_context_t *ctx, dtls_peer_t *peer,
   dtls_debug_dump("v:", b.verify_data, sizeof(b.verify_data));
 
   /* compare verify data and create DTLS alert code when they differ */
-  return equals(data + DTLS_HS_LENGTH, b.verify_data, sizeof(b.verify_data))
+  return dtls_equals(data + DTLS_HS_LENGTH, b.verify_data, sizeof(b.verify_data))
     ? 0
     : dtls_alert_create(DTLS_ALERT_LEVEL_FATAL, DTLS_ALERT_HANDSHAKE_FAILURE);
 }
