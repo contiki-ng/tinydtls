@@ -41,7 +41,6 @@
 #include "hmac.h"
 
 #include "alert.h"
-#include "session.h"
 #include "prng.h"
 
 #include "dtls-support.h"

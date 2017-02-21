@@ -21,7 +21,6 @@
 #include <stdlib.h>
 
 #include "tinydtls.h"
-#include "session.h"
 
 #ifdef WITH_CONTIKI
 # ifndef DEBUG

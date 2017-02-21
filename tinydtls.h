@@ -24,6 +24,8 @@
 #ifndef _DTLS_TINYDTLS_H_
 #define _DTLS_TINYDTLS_H_
 
+#include "dtls-support-conf.h"
+
 #ifdef DTLS_CONFIG_CONF_H
 #include DTLS_CONFIG_CONF_H
 #else /* DTLS_CONFIG_CONF_H */
@@ -148,5 +150,7 @@ dtls_fls(unsigned int i) {
 #endif /* HAVE_FLS */
 
 #define uthash_fatal(msg) return(-1) /* fatal error in uthash */
+
+#include "dtls-support.h"
 
 #endif /* _DTLS_TINYDTLS_H_ */
