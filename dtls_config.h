@@ -147,6 +147,6 @@
 #define DTLS_PSK 1
 
 /** do not use uthash hash tables */
-/* #define DTLS_PEERS_NOHASH 1 */
+#define DTLS_PEERS_NOHASH 1
 
 #define DTLS_CHECK_CONTENTTYPE 1
