@@ -45,7 +45,9 @@ static inline void check_stack() {
 }
 #endif /* CONTIKI_TARGET_MBXXX */
 #else /* WITH_CONTKI */
+#ifndef PRINTF
 #define PRINTF(...)
+#endif /* PRINTF */
 
 static inline void check_stack() {
 }
