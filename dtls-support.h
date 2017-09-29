@@ -28,4 +28,25 @@ void dtls_session_init(session_t *sess);
  */
 int dtls_session_equals(const session_t *a, const session_t *b);
 
+/**
+ * Get the address information for this session as an opaque (void *)
+ */
+void *dtls_session_get_address(const session_t *a);
+
+/**
+ * Get the address information size for this session.
+ */
+int dtls_session_get_address_size(const session_t *a);
+
+/**
+ * print the session info
+ */
+void dtls_session_print(const session_t *a);
+
+/**
+ * sn-print the session info
+ */
+void dtls_session_snprint(const session_t *a, char *buf, size_t size);
+
+
 #endif /* DTLS_SUPPORT_H_ */

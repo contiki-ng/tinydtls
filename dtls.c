@@ -296,8 +296,9 @@ dtls_create_cookie(dtls_context_t *ctx,
   dtls_hmac_context_t hmac_context;
   dtls_hmac_init(&hmac_context, ctx->cookie_secret, DTLS_COOKIE_SECRET_LENGTH);
 
-  dtls_hmac_update(&hmac_context, 
-		   (unsigned char *)&session->addr, session->size);
+  dtls_hmac_update(&hmac_context,
+		   (unsigned char *)dtls_session_get_address(session),
+                   dtls_session_get_address_size(session));
 
   /* feed in the beginning of the Client Hello up to and including the
      session id */
