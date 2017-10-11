@@ -30,21 +30,13 @@
 #include "state.h"
 #include "crypto.h"
 
-#ifndef DTLS_PEERS_NOHASH
-#include "uthash.h"
-#endif /* DTLS_PEERS_NOHASH */
-
 typedef enum { DTLS_CLIENT=0, DTLS_SERVER } dtls_peer_type;
 
 /** 
  * Holds security parameters, local state and the transport address
  * for each peer. */
 typedef struct dtls_peer_t {
-#ifdef DTLS_PEERS_NOHASH
   struct dtls_peer_t *next;
-#else /* DTLS_PEERS_NOHASH */
-  UT_hash_handle hh;
-#endif /* DTLS_PEERS_NOHASH */
 
   session_t session;	     /**< peer address and local interface */
 

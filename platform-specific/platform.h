@@ -33,9 +33,6 @@
 #  define DTLS_HASH_MAX (3 * DTLS_PEER_MAX)
 #endif
 
-/** do not use uthash hash tables */
-#define DTLS_PEERS_NOHASH 1
-
 /************************************************************************/
 /* Specific Contiki platforms                                           */
 /************************************************************************/

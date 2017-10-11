@@ -29,8 +29,6 @@
 #include "state.h"
 #include "peer.h"
 
-#include "uthash.h"
-
 #include "alert.h"
 #include "crypto.h"
 #include "hmac.h"
@@ -428,12 +426,6 @@ void dtls_reset_peer(dtls_context_t *context, dtls_peer_t *peer);
  * This software is under the <a 
  * href="http://www.opensource.org/licenses/mit-license.php">MIT License</a>.
  * 
- * @subsection uthash UTHash
- *
- * This library uses <a href="http://uthash.sourceforge.net/">uthash</a> to manage
- * its peers (not used for Contiki). @b uthash uses the <b>BSD revised license</b>, see
- * <a href="http://uthash.sourceforge.net/license.html">http://uthash.sourceforge.net/license.html</a>.
- *
  * @subsection sha256 Aaron D. Gifford's SHA256 Implementation
  *
  * tinyDTLS provides HMAC-SHA256 with BSD-licensed code from Aaron D. Gifford, 

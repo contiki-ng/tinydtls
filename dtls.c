@@ -30,9 +30,6 @@
 #endif /* WITH_CONTIKI */
 
 #include "utlist.h"
-#ifndef DTLS_PEERS_NOHASH
-#include "uthash.h"
-#endif /* DTLS_PEERS_NOHASH */
 
 #include "dtls_debug.h"
 #include "numeric.h"
@@ -59,7 +56,6 @@
 #define dtls_get_sequence_number(H) dtls_uint48_to_ulong((H)->sequence_number)
 #define dtls_get_fragment_length(H) dtls_uint24_to_int((H)->fragment_length)
 
-#ifdef DTLS_PEERS_NOHASH
 #define FIND_PEER(head,sess,out)                                \
   do {                                                          \
     dtls_peer_t * tmp;                                          \
@@ -77,16 +73,6 @@
   }
 #define ADD_PEER(head,sess,add)                 \
   LL_PREPEND(ctx->peers, peer);
-#else /* DTLS_PEERS_NOHASH */
-#define FIND_PEER(head,sess,out)		\
-  HASH_FIND(hh,head,sess,sizeof(session_t),out)
-#define ADD_PEER(head,sess,add)                 \
-  HASH_ADD(hh,head,sess,sizeof(session_t),add)
-#define DEL_PEER(head,delptr)                   \
-  if ((head) != NULL && (delptr) != NULL) {	\
-    HASH_DELETE(hh,head,delptr);		\
-  }
-#endif /* DTLS_PEERS_NOHASH */
 
 #define DTLS_RH_LENGTH sizeof(dtls_record_header_t)
 #define DTLS_HS_LENGTH sizeof(dtls_handshake_header_t)
@@ -3820,11 +3806,7 @@ dtls_free_context(dtls_context_t *ctx) {
   }
 
   if (ctx->peers) {
-#ifdef DTLS_PEERS_NOHASH
     LL_FOREACH_SAFE(ctx->peers, p, tmp) {
-#else /* DTLS_PEERS_NOHASH */
-    HASH_ITER(hh, ctx->peers, p, tmp) {
-#endif /* DTLS_PEERS_NOHASH */
       dtls_destroy_peer(ctx, p, 1);
     }
   }

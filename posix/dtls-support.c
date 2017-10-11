@@ -33,32 +33,12 @@ dtls_strnlen(const char *s, size_t maxlen) {
   return n;
 }
 
-#ifdef HAVE_TIME_H
-
 static inline size_t
 print_timestamp(char *s, size_t len, time_t t) {
   struct tm *tmp;
   tmp = localtime(&t);
   return strftime(s, len, "%b %d %H:%M:%S", tmp);
 }
-
-#else /* alternative implementation: just print the timestamp */
-
-static inline size_t
-print_timestamp(char *s, size_t len, clock_time_t t) {
-#ifdef HAVE_SNPRINTF
-  return snprintf(s, len, "%u.%03u",
-		  (unsigned int)(t / CLOCK_SECOND),
-		  (unsigned int)(t % CLOCK_SECOND));
-#else /* HAVE_SNPRINTF */
-  /* @todo do manual conversion of timestamp */
-  return 0;
-#endif /* HAVE_SNPRINTF */
-}
-
-#endif /* HAVE_TIME_H */
-
-
 
 void
 memb_init(struct memb *m)
@@ -143,7 +123,8 @@ dsrv_print_addr(const session_t *addr, char *buf, size_t len) {
 
 #ifdef HAVE_VPRINTF
 void
-dsrv_log(log_t level, char *format, ...) {
+dsrv_log(log_t level, char *format, ...)
+{
   static char timebuf[32];
   va_list ap;
   FILE *log_fd;
@@ -156,7 +137,7 @@ dsrv_log(log_t level, char *format, ...) {
   if (print_timestamp(timebuf,sizeof(timebuf), time(NULL)))
     fprintf(log_fd, "%s ", timebuf);
 
-  if (level <= DTLS_LOG_DEBUG) 
+  if (level <= DTLS_LOG_DEBUG)
     fprintf(log_fd, "%s ", loglevels[level]);
 
   va_start(ap, format);
@@ -216,27 +197,15 @@ time_t dtls_clock_offset;
 
 void
 dtls_clock_init(void) {
-#ifdef HAVE_TIME_H
   dtls_clock_offset = time(NULL);
-#else
-#  ifdef __GNUC__
-  /* Issue a warning when using gcc. Other prepropressors do 
-   *  not seem to have a similar feature. */ 
-#   warning "cannot initialize clock"
-#  endif
   dtls_clock_offset = 0;
-#endif
 }
 
 void dtls_ticks(dtls_tick_t *t) {
-#ifdef HAVE_SYS_TIME_H
   struct timeval tv;
   gettimeofday(&tv, NULL);
   *t = (tv.tv_sec - dtls_clock_offset) * DTLS_TICKS_PER_SECOND 
     + (tv.tv_usec * DTLS_TICKS_PER_SECOND / 1000000);
-#else
-#error "clock not implemented"
-#endif
 }
 
 int

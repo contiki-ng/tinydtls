@@ -31,13 +31,6 @@ the Eclipse Foundation, the following is provided for informational
 purposes only, and you should look to the Redistributor’s license for
 terms and conditions of use.
 
-## Uthash 1.9.9
-
-[Uthash](https://troydhanson.github.io/uthash/) is an implementation
-of hash tables and linked lists for C structures by Troy D. Hanson.
-Uthash is licensed under the BSD revised license, see
-https://troydhanson.github.io/uthash/license.html,
-
 ## rijndael 3.0
 
 The library uses an implementation of the Rijndael algorithm (AES)

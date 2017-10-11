@@ -17,10 +17,7 @@
 # the library's version
 VERSION:=0.8.6
 
-# should probably be from the autoconf system.
-ifeq ($(DTLS_SUPPORT), )
- DTLS_SUPPORT=posix
-endif
+DTLS_SUPPORT ?= posix
 
 # files and flags
 SOURCES = dtls.c crypto.c ccm.c hmac.c netq.c peer.c dtls_debug.c
