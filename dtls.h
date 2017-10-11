@@ -315,11 +315,11 @@ void dtls_check_retransmit(dtls_context_t *context, clock_time_t *next,
 
 /** Generic header structure of the DTLS record layer. */
 typedef struct __attribute__((__packed__)) {
-  uint8 content_type;		/**< content type of the included message */
-  uint16 version;		/**< Protocol version */
-  uint16 epoch;		        /**< counter for cipher state changes */
-  uint48 sequence_number;       /**< sequence number */
-  uint16 length;		/**< length of the following fragment */
+  uint8_t content_type;		/**< content type of the included message */
+  uint8_t version[2];		/**< Protocol version */
+  uint8_t epoch[2];	        /**< counter for cipher state changes */
+  uint8_t sequence_number[6];   /**< sequence number */
+  uint8_t length[2];		/**< length of the following fragment */
   /* fragment */
 } dtls_record_header_t;
 
@@ -339,18 +339,18 @@ typedef struct __attribute__((__packed__)) {
 
 /** Header structure for the DTLS handshake protocol. */
 typedef struct __attribute__((__packed__)) {
-  uint8 msg_type; /**< Type of handshake message  (one of DTLS_HT_) */
-  uint24 length;  /**< length of this message */
-  uint16 message_seq; 	/**< Message sequence number */
-  uint24 fragment_offset;	/**< Fragment offset. */
-  uint24 fragment_length;	/**< Fragment length. */
+  uint8_t msg_type; /**< Type of handshake message  (one of DTLS_HT_) */
+  uint8_t length[3];  /**< length of this message */
+  uint8_t message_seq[2]; 	/**< Message sequence number */
+  uint8_t fragment_offset[3];	/**< Fragment offset. */
+  uint8_t fragment_length[3];	/**< Fragment length. */
   /* body */
 } dtls_handshake_header_t;
 
 /** Structure of the Client Hello message. */
 typedef struct __attribute__((__packed__)) {
-  uint16 version;	  /**< Client version */
-  uint32 gmt_random;	  /**< GMT time of the random byte creation */
+  uint8_t version[2];	  /**< Client version */
+  uint8_t gmt_random[4];  /**< GMT time of the random byte creation */
   unsigned char random[28];	/**< Client random bytes */
   /* session id (up to 32 bytes) */
   /* cookie (up to 32 bytes) */
@@ -360,9 +360,9 @@ typedef struct __attribute__((__packed__)) {
 
 /** Structure of the Hello Verify Request. */
 typedef struct __attribute__((__packed__)) {
-  uint16 version;		/**< Server version */
-  uint8 cookie_length;	/**< Length of the included cookie */
-  uint8 cookie[];		/**< up to 32 bytes making up the cookie */
+  uint8_t version[2];		/**< Server version */
+  uint8_t cookie_length;	/**< Length of the included cookie */
+  uint8_t cookie[];		/**< up to 32 bytes making up the cookie */
 } dtls_hello_verify_t;  
 
 #if 0

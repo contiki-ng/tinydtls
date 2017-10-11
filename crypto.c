@@ -235,15 +235,15 @@ dtls_mac(dtls_hmac_context_t *hmac_ctx,
 	 const unsigned char *record,
 	 const unsigned char *packet, size_t length,
 	 unsigned char *buf) {
-  uint16 L;
+  uint8_t L[2];
   dtls_int_to_uint16(L, length);
 
   assert(hmac_ctx);
-  dtls_hmac_update(hmac_ctx, record +3, sizeof(uint16) + sizeof(uint48));
-  dtls_hmac_update(hmac_ctx, record, sizeof(uint8) + sizeof(uint16));
-  dtls_hmac_update(hmac_ctx, L, sizeof(uint16));
+  dtls_hmac_update(hmac_ctx, record +3, 4 * sizeof(uint16_t));
+  dtls_hmac_update(hmac_ctx, record, sizeof(uint8_t) + sizeof(uint16_t));
+  dtls_hmac_update(hmac_ctx, L, sizeof(uint16_t));
   dtls_hmac_update(hmac_ctx, packet, length);
-  
+
   dtls_hmac_finalize(hmac_ctx, buf);
 }
 
@@ -287,22 +287,22 @@ dtls_psk_pre_master_secret(unsigned char *key, size_t keylen,
 			   unsigned char *result, size_t result_len) {
   unsigned char *p = result;
 
-  if (result_len < (2 * (sizeof(uint16) + keylen))) {
+  if (result_len < (2 * (sizeof(uint16_t) + keylen))) {
     return -1;
   }
 
   dtls_int_to_uint16(p, keylen);
-  p += sizeof(uint16);
+  p += sizeof(uint16_t);
 
   memset(p, 0, keylen);
   p += keylen;
 
-  memcpy(p, result, sizeof(uint16));
-  p += sizeof(uint16);
+  memcpy(p, result, sizeof(uint16_t));
+  p += sizeof(uint16_t);
   
   memcpy(p, key, keylen);
 
-  return 2 * (sizeof(uint16) + keylen);
+  return 2 * (sizeof(uint16_t) + keylen);
 }
 #endif /* DTLS_PSK */
 

@@ -50,10 +50,10 @@
 /* Define our own types as at least uint32_t does not work on my amd64. */
 
 typedef unsigned char uint8;
-typedef unsigned char uint16[2];
-typedef unsigned char uint24[3];
-typedef unsigned char uint32[4];
-typedef unsigned char uint48[6];
+/* typedef unsigned char uint16[2]; */
+/* typedef unsigned char uint24[3]; */
+/* typedef unsigned char uint32[4]; */
+/* typedef unsigned char uint48[6]; */
 
 #ifndef DTLS_MAX_BUF
 /** Maximum size of DTLS message.

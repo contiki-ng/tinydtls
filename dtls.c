@@ -386,24 +386,24 @@ dtls_set_record_header(uint8 type, dtls_security_parameters_t *security,
   buf += sizeof(uint8);
 
   dtls_int_to_uint16(buf, DTLS_VERSION);
-  buf += sizeof(uint16);
+  buf += sizeof(uint16_t);
 
   if (security) {
     dtls_int_to_uint16(buf, security->epoch);
-    buf += sizeof(uint16);
+    buf += sizeof(uint16_t);
 
     dtls_int_to_uint48(buf, security->rseq);
-    buf += sizeof(uint48);
+    buf += 6; /* 48 bits */
 
     /* increment record sequence counter by 1 */
     security->rseq++;
   } else {
-    memset(buf, 0, sizeof(uint16) + sizeof(uint48));
-    buf += sizeof(uint16) + sizeof(uint48);
+    memset(buf, 0, sizeof(uint16_t) + 6); /* 16 + 48 bits */
+    buf += sizeof(uint16_t) + 6; /* 16 + 48 bits */
   }
 
-  memset(buf, 0, sizeof(uint16));
-  return buf + sizeof(uint16);
+  memset(buf, 0, sizeof(uint16_t));
+  return buf + sizeof(uint16_t);
 }
 
 /**
@@ -422,7 +422,7 @@ dtls_set_handshake_header(uint8 type, dtls_peer_t *peer,
   buf += sizeof(uint8);
 
   dtls_int_to_uint24(buf, length);
-  buf += sizeof(uint24);
+  buf += 3; /* 24 bits */
 
   if (peer && peer->handshake_params) {
     /* and copy the result to buf */
@@ -431,15 +431,15 @@ dtls_set_handshake_header(uint8 type, dtls_peer_t *peer,
     /* increment handshake message sequence counter by 1 */
     peer->handshake_params->hs_state.mseq_s++;
   } else {
-    memset(buf, 0, sizeof(uint16));    
+    memset(buf, 0, sizeof(uint16_t));
   }
-  buf += sizeof(uint16);
+  buf += sizeof(uint16_t);
   
   dtls_int_to_uint24(buf, frag_offset);
-  buf += sizeof(uint24);
+  buf += 3; /* 24 bits */
 
   dtls_int_to_uint24(buf, frag_length);
-  buf += sizeof(uint24);
+  buf += 3; /* 24 bits */
   
   return buf;
 }
@@ -725,16 +725,16 @@ static int verify_ext_eliptic_curves(uint8 *data, size_t data_length) {
 
   /* length of curve list */
   i = dtls_uint16_to_int(data);
-  data += sizeof(uint16);
-  if (i + sizeof(uint16) != data_length) {
+  data += sizeof(uint16_t);
+  if (i + sizeof(uint16_t) != data_length) {
     dtls_warn("the list of the supported elliptic curves should be tls extension length - 2\n");
     return dtls_alert_fatal_create(DTLS_ALERT_HANDSHAKE_FAILURE);
   }
 
-  for (i = data_length - sizeof(uint16); i > 0; i -= sizeof(uint16)) {
+  for (i = data_length - sizeof(uint16_t); i > 0; i -= sizeof(uint16_t)) {
     /* check if this curve is supported */
     curve_name = dtls_uint16_to_int(data);
-    data += sizeof(uint16);
+    data += sizeof(uint16_t);
 
     if (curve_name == TLS_EXT_ELLIPTIC_CURVES_SECP256R1)
       return 0;
@@ -806,7 +806,7 @@ dtls_check_tls_extension(dtls_peer_t *peer,
   int ext_ec_point_formats = 0;
   dtls_handshake_parameters_t *handshake = peer->handshake_params;
 
-  if (data_length < sizeof(uint16)) { 
+  if (data_length < sizeof(uint16_t)) { 
     /* no tls extensions specified */
     if (is_tls_ecdhe_ecdsa_with_aes_128_ccm_8(handshake->cipher)) {
       goto error;
@@ -816,26 +816,26 @@ dtls_check_tls_extension(dtls_peer_t *peer,
 
   /* get the length of the tls extension list */
   j = dtls_uint16_to_int(data);
-  data += sizeof(uint16);
-  data_length -= sizeof(uint16);
+  data += sizeof(uint16_t);
+  data_length -= sizeof(uint16_t);
 
   if (data_length < j)
     goto error;
 
   /* check for TLS extensions needed for this cipher */
   while (data_length) {
-    if (data_length < sizeof(uint16) * 2)
+    if (data_length < sizeof(uint16_t) * 2)
       goto error;
 
     /* get the tls extension type */
     i = dtls_uint16_to_int(data);
-    data += sizeof(uint16);
-    data_length -= sizeof(uint16);
+    data += sizeof(uint16_t);
+    data_length -= sizeof(uint16_t);
 
     /* get the length of the tls extension */
     j = dtls_uint16_to_int(data);
-    data += sizeof(uint16);
-    data_length -= sizeof(uint16);
+    data += sizeof(uint16_t);
+    data_length -= sizeof(uint16_t);
 
     if (data_length < j)
       goto error;
@@ -931,8 +931,8 @@ dtls_update_parameters(dtls_context_t *ctx,
   assert(data_length > DTLS_HS_LENGTH + DTLS_CH_LENGTH);
 
   /* skip the handshake header and client version information */
-  data += DTLS_HS_LENGTH + sizeof(uint16);
-  data_length -= DTLS_HS_LENGTH + sizeof(uint16);
+  data += DTLS_HS_LENGTH + sizeof(uint16_t);
+  data_length -= DTLS_HS_LENGTH + sizeof(uint16_t);
 
   /* store client random in config */
   memcpy(config->tmp.random.client, data, DTLS_RANDOM_LENGTH);
@@ -944,7 +944,7 @@ dtls_update_parameters(dtls_context_t *ctx,
   SKIP_VAR_FIELD(data, data_length, uint8);	/* skip cookie */
 
   i = dtls_uint16_to_int(data);
-  if (data_length < i + sizeof(uint16)) {
+  if (data_length < i + sizeof(uint16_t)) {
     /* Looks like we do not have a cipher nor compression. This is ok
      * for renegotiation, but not for the initial handshake. */
 
@@ -957,15 +957,15 @@ dtls_update_parameters(dtls_context_t *ctx,
     return 0;
   }
 
-  data += sizeof(uint16);
-  data_length -= sizeof(uint16) + i;
+  data += sizeof(uint16_t);
+  data_length -= sizeof(uint16_t) + i;
 
   ok = 0;
   while (i && !ok) {
     config->cipher = dtls_uint16_to_int(data);
     ok = known_cipher(ctx, config->cipher, 0);
-    i -= sizeof(uint16);
-    data += sizeof(uint16);
+    i -= sizeof(uint16_t);
+    data += sizeof(uint16_t);
   }
 
   /* skip remaining ciphers */
@@ -1069,7 +1069,7 @@ check_client_keyexchange(dtls_context_t *ctx,
     data += DTLS_HS_LENGTH;
 
     id_length = dtls_uint16_to_int(data);
-    data += sizeof(uint16);
+    data += sizeof(uint16_t);
 
     if (DTLS_HS_LENGTH + DTLS_CKXPSK_LENGTH_MIN + id_length != length) {
       dtls_debug("The identity has a wrong length\n");
@@ -1597,7 +1597,7 @@ dtls_verify_peer(dtls_context_t *ctx,
    * HelloVerify request. */
 
   dtls_int_to_uint16(p, DTLS_VERSION);
-  p += sizeof(uint16);
+  p += sizeof(uint16_t);
 
   dtls_int_to_uint8(p, DTLS_COOKIE_LENGTH);
   p += sizeof(uint8);
@@ -1648,8 +1648,8 @@ dtls_check_ecdsa_signature_elem(uint8 *data, size_t data_length,
     dtls_alert("signature length wrong\n");
     return dtls_alert_fatal_create(DTLS_ALERT_DECODE_ERROR);
   }
-  data += sizeof(uint16);
-  data_length -= sizeof(uint16);
+  data += sizeof(uint16_t);
+  data_length -= sizeof(uint16_t);
 
   if (dtls_uint8_to_int(data) != 0x30) {
     dtls_alert("wrong ASN.1 struct, expected SEQUENCE\n");
@@ -1769,7 +1769,7 @@ dtls_send_server_hello(dtls_context_t *ctx, dtls_peer_t *peer)
 
   /* ServerHello */
   dtls_int_to_uint16(p, DTLS_VERSION);
-  p += sizeof(uint16);
+  p += sizeof(uint16_t);
 
   /* Set server random: First 4 bytes are the server's Unix timestamp,
    * followed by 28 bytes of generate random data. */
@@ -1785,7 +1785,7 @@ dtls_send_server_hello(dtls_context_t *ctx, dtls_peer_t *peer)
   if (handshake->cipher != TLS_NULL_WITH_NULL_NULL) {
     /* selected cipher suite */
     dtls_int_to_uint16(p, handshake->cipher);
-    p += sizeof(uint16);
+    p += sizeof(uint16_t);
 
     /* selected compression method */
     *p++ = compression_methods[handshake->compression];
@@ -1794,39 +1794,39 @@ dtls_send_server_hello(dtls_context_t *ctx, dtls_peer_t *peer)
   if (extension_size) {
     /* length of the extensions */
     dtls_int_to_uint16(p, extension_size - 2);
-    p += sizeof(uint16);
+    p += sizeof(uint16_t);
   }
 
   if (ecdsa) {
     /* client certificate type extension */
     dtls_int_to_uint16(p, TLS_EXT_CLIENT_CERTIFICATE_TYPE);
-    p += sizeof(uint16);
+    p += sizeof(uint16_t);
 
     /* length of this extension type */
     dtls_int_to_uint16(p, 1);
-    p += sizeof(uint16);
+    p += sizeof(uint16_t);
 
     dtls_int_to_uint8(p, TLS_CERT_TYPE_RAW_PUBLIC_KEY);
     p += sizeof(uint8);
 
     /* client certificate type extension */
     dtls_int_to_uint16(p, TLS_EXT_SERVER_CERTIFICATE_TYPE);
-    p += sizeof(uint16);
+    p += sizeof(uint16_t);
 
     /* length of this extension type */
     dtls_int_to_uint16(p, 1);
-    p += sizeof(uint16);
+    p += sizeof(uint16_t);
 
     dtls_int_to_uint8(p, TLS_CERT_TYPE_RAW_PUBLIC_KEY);
     p += sizeof(uint8);
 
     /* ec_point_formats */
     dtls_int_to_uint16(p, TLS_EXT_EC_POINT_FORMATS);
-    p += sizeof(uint16);
+    p += sizeof(uint16_t);
 
     /* length of this extension type */
     dtls_int_to_uint16(p, 2);
-    p += sizeof(uint16);
+    p += sizeof(uint16_t);
 
     /* number of supported formats */
     dtls_int_to_uint8(p, 1);
@@ -1861,7 +1861,7 @@ dtls_send_certificate_ecdsa(dtls_context_t *ctx, dtls_peer_t *peer,
 
   /* length of this certificate */
   dtls_int_to_uint24(p, DTLS_EC_SUBJECTPUBLICKEY_SIZE);
-  p += sizeof(uint24);
+  p += 3; /* 24 bits */
 
   memcpy(p, &cert_asn1_header, sizeof(cert_asn1_header));
   p += sizeof(cert_asn1_header);
@@ -1903,7 +1903,7 @@ dtls_add_ecdsa_signature_elem(uint8 *p, uint32_t *point_r, uint32_t *point_s)
 
   /* length of signature */
   dtls_int_to_uint16(p, len_r + len_s + 2 + 2 + 2);
-  p += sizeof(uint16);
+  p += sizeof(uint16_t);
 
   /* ASN.1 SEQUENCE */
   dtls_int_to_uint8(p, 0x30);
@@ -1962,7 +1962,7 @@ dtls_send_server_key_exchange_ecdh(dtls_context_t *ctx, dtls_peer_t *peer,
 
   /* NamedCurve namedcurve: secp256r1 */
   dtls_int_to_uint16(p, TLS_EXT_ELLIPTIC_CURVES_SECP256R1);
-  p += sizeof(uint16);
+  p += sizeof(uint16_t);
 
   dtls_int_to_uint8(p, 1 + 2 * DTLS_EC_KEY_SIZE);
   p += sizeof(uint8);
@@ -2017,7 +2017,7 @@ dtls_send_server_key_exchange_psk(dtls_context_t *ctx, dtls_peer_t *peer,
   }
 
   dtls_int_to_uint16(p, len);
-  p += sizeof(uint16);
+  p += sizeof(uint16_t);
 
   memcpy(p, psk_hint, len);
   p += len;
@@ -2051,7 +2051,7 @@ dtls_send_server_certificate_request(dtls_context_t *ctx, dtls_peer_t *peer)
 
   /* supported_signature_algorithms */
   dtls_int_to_uint16(p, 2);
-  p += sizeof(uint16);
+  p += sizeof(uint16_t);
 
   /* sha256 */
   dtls_int_to_uint8(p, TLS_EXT_SIG_HASH_ALGO_SHA256);
@@ -2063,7 +2063,7 @@ dtls_send_server_certificate_request(dtls_context_t *ctx, dtls_peer_t *peer)
 
   /* certificate_authoritiess */
   dtls_int_to_uint16(p, 0);
-  p += sizeof(uint16);
+  p += sizeof(uint16_t);
 
   assert(p - buf <= sizeof(buf));
 
@@ -2191,24 +2191,24 @@ dtls_send_client_key_exchange(dtls_context_t *ctx, dtls_peer_t *peer)
 
     len = CALL(ctx, get_psk_info, &peer->session, DTLS_PSK_IDENTITY,
 	       handshake->keyx.psk.identity, handshake->keyx.psk.id_length,
-	       buf + sizeof(uint16),
-	       min(sizeof(buf) - sizeof(uint16),
+	       buf + sizeof(uint16_t),
+	       min(sizeof(buf) - sizeof(uint16_t),
 		   sizeof(handshake->keyx.psk.identity)));
     if (len < 0) {
       dtls_crit("no psk identity set in kx\n");
       return len;
     }
 
-    if (len + sizeof(uint16) > DTLS_CKXEC_LENGTH) {
+    if (len + sizeof(uint16_t) > DTLS_CKXEC_LENGTH) {
       memset(&handshake->keyx.psk, 0, sizeof(dtls_handshake_parameters_psk_t));
       dtls_warn("the psk identity is too long\n");
       return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
     }
     handshake->keyx.psk.id_length = (unsigned int)len;
-    memcpy(handshake->keyx.psk.identity, p + sizeof(uint16), len);
+    memcpy(handshake->keyx.psk.identity, p + sizeof(uint16_t), len);
 
     dtls_int_to_uint16(p, handshake->keyx.psk.id_length);
-    p += sizeof(uint16);
+    p += sizeof(uint16_t);
 
     memcpy(p, handshake->keyx.psk.identity, handshake->keyx.psk.id_length);
     p += handshake->keyx.psk.id_length;
@@ -2342,7 +2342,7 @@ dtls_send_client_hello(dtls_context_t *ctx, dtls_peer_t *peer,
   }
 
   dtls_int_to_uint16(p, DTLS_VERSION);
-  p += sizeof(uint16);
+  p += sizeof(uint16_t);
 
   if (cookie_length > DTLS_COOKIE_LENGTH_MAX) {
     dtls_warn("the cookie is too long\n");
@@ -2354,8 +2354,8 @@ dtls_send_client_hello(dtls_context_t *ctx, dtls_peer_t *peer,
      * followed by 28 bytes of generate random data. */
     dtls_ticks(&now);
     dtls_int_to_uint32(handshake->tmp.random.client, now / CLOCK_SECOND);
-    dtls_prng(handshake->tmp.random.client + sizeof(uint32),
-         DTLS_RANDOM_LENGTH - sizeof(uint32));
+    dtls_prng(handshake->tmp.random.client + sizeof(uint32_t),
+         DTLS_RANDOM_LENGTH - sizeof(uint32_t));
   }
   /* we must use the same Client Random as for the previous request */
   memcpy(p, handshake->tmp.random.client, DTLS_RANDOM_LENGTH);
@@ -2375,15 +2375,15 @@ dtls_send_client_hello(dtls_context_t *ctx, dtls_peer_t *peer,
 
   /* add known cipher(s) */
   dtls_int_to_uint16(p, cipher_size - 2);
-  p += sizeof(uint16);
+  p += sizeof(uint16_t);
 
   if (ecdsa) {
     dtls_int_to_uint16(p, TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8);
-    p += sizeof(uint16);
+    p += sizeof(uint16_t);
   }
   if (psk) {
     dtls_int_to_uint16(p, TLS_PSK_WITH_AES_128_CCM_8);
-    p += sizeof(uint16);
+    p += sizeof(uint16_t);
   }
 
   /* compression method */
@@ -2396,17 +2396,17 @@ dtls_send_client_hello(dtls_context_t *ctx, dtls_peer_t *peer,
   if (extension_size) {
     /* length of the extensions */
     dtls_int_to_uint16(p, extension_size - 2);
-    p += sizeof(uint16);
+    p += sizeof(uint16_t);
   }
 
   if (ecdsa) {
     /* client certificate type extension */
     dtls_int_to_uint16(p, TLS_EXT_CLIENT_CERTIFICATE_TYPE);
-    p += sizeof(uint16);
+    p += sizeof(uint16_t);
 
     /* length of this extension type */
     dtls_int_to_uint16(p, 2);
-    p += sizeof(uint16);
+    p += sizeof(uint16_t);
 
     /* length of the list */
     dtls_int_to_uint8(p, 1);
@@ -2417,11 +2417,11 @@ dtls_send_client_hello(dtls_context_t *ctx, dtls_peer_t *peer,
 
     /* client certificate type extension */
     dtls_int_to_uint16(p, TLS_EXT_SERVER_CERTIFICATE_TYPE);
-    p += sizeof(uint16);
+    p += sizeof(uint16_t);
 
     /* length of this extension type */
     dtls_int_to_uint16(p, 2);
-    p += sizeof(uint16);
+    p += sizeof(uint16_t);
 
     /* length of the list */
     dtls_int_to_uint8(p, 1);
@@ -2432,26 +2432,26 @@ dtls_send_client_hello(dtls_context_t *ctx, dtls_peer_t *peer,
 
     /* elliptic_curves */
     dtls_int_to_uint16(p, TLS_EXT_ELLIPTIC_CURVES);
-    p += sizeof(uint16);
+    p += sizeof(uint16_t);
 
     /* length of this extension type */
     dtls_int_to_uint16(p, 4);
-    p += sizeof(uint16);
+    p += sizeof(uint16_t);
 
     /* length of the list */
     dtls_int_to_uint16(p, 2);
-    p += sizeof(uint16);
+    p += sizeof(uint16_t);
 
     dtls_int_to_uint16(p, TLS_EXT_ELLIPTIC_CURVES_SECP256R1);
-    p += sizeof(uint16);
+    p += sizeof(uint16_t);
 
     /* ec_point_formats */
     dtls_int_to_uint16(p, TLS_EXT_EC_POINT_FORMATS);
-    p += sizeof(uint16);
+    p += sizeof(uint16_t);
 
     /* length of this extension type */
     dtls_int_to_uint16(p, 2);
-    p += sizeof(uint16);
+    p += sizeof(uint16_t);
 
     /* number of supported formats */
     dtls_int_to_uint8(p, 1);
@@ -2504,8 +2504,8 @@ check_server_hello(dtls_context_t *ctx,
     return dtls_alert_fatal_create(DTLS_ALERT_PROTOCOL_VERSION);
   }
 
-  data += sizeof(uint16);	      /* skip version field */
-  data_length -= sizeof(uint16);
+  data += sizeof(uint16_t);	      /* skip version field */
+  data_length -= sizeof(uint16_t);
 
   /* store server random data */
   memcpy(handshake->tmp.random.server, data, DTLS_RANDOM_LENGTH);
@@ -2524,8 +2524,8 @@ check_server_hello(dtls_context_t *ctx,
 	     data[0], data[1]);
     return dtls_alert_fatal_create(DTLS_ALERT_INSUFFICIENT_SECURITY);
   }
-  data += sizeof(uint16);
-  data_length -= sizeof(uint16);
+  data += sizeof(uint16_t);
+  data_length -= sizeof(uint16_t);
 
   /* Check if NULL compression was selected. We do not know any other. */
   if (dtls_uint8_to_int(data) != TLS_COMPRESSION_NULL) {
@@ -2582,7 +2582,7 @@ check_server_certificate(dtls_context_t *ctx,
 	       DTLS_EC_SUBJECTPUBLICKEY_SIZE);
     return dtls_alert_fatal_create(DTLS_ALERT_DECODE_ERROR);
   }
-  data += sizeof(uint24);
+  data += 3; /* 24 bits */
 
   if (memcmp(data, cert_asn1_header, sizeof(cert_asn1_header))) {
     dtls_alert("got an unexpected Subject public key format\n");
@@ -2644,8 +2644,8 @@ check_server_key_exchange_ecdsa(dtls_context_t *ctx,
     dtls_alert("secp256r1 supported\n");
     return dtls_alert_fatal_create(DTLS_ALERT_HANDSHAKE_FAILURE);
   }
-  data += sizeof(uint16);
-  data_length -= sizeof(uint16);
+  data += sizeof(uint16_t);
+  data_length -= sizeof(uint16_t);
 
   if (dtls_uint8_to_int(data) != 1 + 2 * DTLS_EC_KEY_SIZE) {
     dtls_alert("expected 65 bytes long public point\n");
@@ -2713,9 +2713,9 @@ check_server_key_exchange_psk(dtls_context_t *ctx,
   }
 
   len = dtls_uint16_to_int(data);
-  data += sizeof(uint16);
+  data += sizeof(uint16_t);
 
-  if (len != data_length - DTLS_HS_LENGTH - sizeof(uint16)) {
+  if (len != data_length - DTLS_HS_LENGTH - sizeof(uint16_t)) {
     dtls_warn("the length of the server identity hint is worng\n");
     return dtls_alert_fatal_create(DTLS_ALERT_DECODE_ERROR);
   }
@@ -2774,7 +2774,7 @@ check_certificate_request(dtls_context_t *ctx,
   }
 
   i = dtls_uint16_to_int(data);
-  data += sizeof(uint16);
+  data += sizeof(uint16_t);
   if (i + 1 > data_length) {
     dtls_alert("the signature and hash algorithm list is too long\n");
     return dtls_alert_fatal_create(DTLS_ALERT_DECODE_ERROR);
@@ -2782,7 +2782,7 @@ check_certificate_request(dtls_context_t *ctx,
 
   hash_alg = 0;
   sig_alg = 0;
-  for (; i > 0 ; i -= sizeof(uint16)) {
+  for (; i > 0 ; i -= sizeof(uint16_t)) {
     int current_hash_alg;
     int current_sig_alg;
 
