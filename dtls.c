@@ -29,8 +29,6 @@
 #include <stdlib.h>
 #endif /* WITH_CONTIKI */
 
-#include "utlist.h"
-
 #include "dtls_debug.h"
 #include "numeric.h"
 #include "netq.h"
@@ -56,23 +54,36 @@
 #define dtls_get_sequence_number(H) dtls_uint48_to_ulong((H)->sequence_number)
 #define dtls_get_fragment_length(H) dtls_uint24_to_int((H)->fragment_length)
 
-#define FIND_PEER(head,sess,out)                                \
-  do {                                                          \
-    dtls_peer_t * tmp;                                          \
-    (out) = NULL;                                               \
-    LL_FOREACH((head), tmp) {                                   \
-      if (dtls_session_equals(&tmp->session, (sess))) {         \
-        (out) = tmp;                                            \
-        break;                                                  \
-      }                                                         \
-    }                                                           \
-  } while (0)
-#define DEL_PEER(head,delptr)                   \
-  if ((head) != NULL && (delptr) != NULL) {	\
-    LL_DELETE(head,delptr);                     \
+static void
+delete_peer(dtls_peer_t **peers, dtls_peer_t *peer)
+{
+  struct dtls_peer_t *l, *r;
+  if(peers == NULL || *peers == NULL || peer == NULL) {
+    return;
   }
-#define ADD_PEER(head,sess,add)                 \
-  LL_PREPEND(ctx->peers, peer);
+  r = NULL;
+  for(l = *peers; l != NULL; l = l->next) {
+    if(l == peer) {
+      if(r == NULL) {
+	/* First on list */
+	*peers = l->next;
+      } else {
+	/* Not first on list */
+	r->next = l->next;
+      }
+      l->next = NULL;
+      return;
+    }
+    r = l;
+  }
+}
+
+static void
+add_peer(dtls_peer_t **peers, dtls_peer_t *peer)
+{
+  peer->next = *peers;
+  *peers = peer;
+}
 
 #define DTLS_RH_LENGTH sizeof(dtls_record_header_t)
 #define DTLS_HS_LENGTH sizeof(dtls_handshake_header_t)
@@ -191,8 +202,14 @@ static void dtls_stop_retransmission(dtls_context_t *context, dtls_peer_t *peer)
 dtls_peer_t *
 dtls_get_peer(const dtls_context_t *ctx, const session_t *session) {
   dtls_peer_t *p;
-  FIND_PEER(ctx->peers, session, p);
-  return p;
+  p = ctx->peers;
+  while(p) {
+    if (dtls_session_equals(&(p->session), session)) {
+      return p;
+    }
+    p = p->next;
+  }
+  return NULL;
 }
 
 /**
@@ -202,7 +219,7 @@ dtls_get_peer(const dtls_context_t *ctx, const session_t *session) {
  */
 static int
 dtls_add_peer(dtls_context_t *ctx, dtls_peer_t *peer) {
-  ADD_PEER(ctx->peers, session, peer);
+  add_peer(&ctx->peers, peer);
   return 0;
 }
 
@@ -1509,7 +1526,7 @@ static void dtls_destroy_peer(dtls_context_t *ctx, dtls_peer_t *peer, int unlink
   if (peer->state != DTLS_STATE_CLOSED && peer->state != DTLS_STATE_CLOSING)
     dtls_close(ctx, &peer->session);
   if (unlink) {
-    DEL_PEER(ctx->peers, peer);
+    delete_peer(&ctx->peers, peer);
     dtls_dsrv_log_addr(DTLS_LOG_DEBUG, "removed peer", &peer->session);
   }
   dtls_free_peer(peer);
@@ -3238,7 +3255,7 @@ handle_handshake_msg(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
       * the cookie exchange */
     if (peer && state == DTLS_STATE_WAIT_CLIENTHELLO) {
        dtls_debug("removing the peer\n");
-       DEL_PEER(ctx->peers, peer);
+       delete_peer(&ctx->peers, peer);
 
        dtls_free_peer(peer);
        peer = NULL;
@@ -3523,8 +3540,8 @@ handle_alert(dtls_context_t *ctx, dtls_peer_t *peer,
    */
   if (data[0] == DTLS_ALERT_LEVEL_FATAL || data[1] == DTLS_ALERT_CLOSE_NOTIFY) {
     dtls_alert("%d invalidate peer\n", data[1]);
-    
-    DEL_PEER(ctx->peers, peer);
+
+    delete_peer(&ctx->peers, peer);
 
 #ifdef WITH_CONTIKI
 #ifndef NDEBUG
@@ -3807,8 +3824,12 @@ dtls_free_context(dtls_context_t *ctx) {
   }
 
   if (ctx->peers) {
-    LL_FOREACH_SAFE(ctx->peers, p, tmp) {
+    //      LL_FOREACH_SAFE(ctx->peers, p, tmp) {
+    p = ctx->peers;
+    while(p) {
+      tmp = p->next;
       dtls_destroy_peer(ctx, p, 1);
+      p = tmp;
     }
   }
 

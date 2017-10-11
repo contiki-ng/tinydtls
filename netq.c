@@ -18,7 +18,6 @@
 #include "tinydtls.h"
 #include "dtls_debug.h"
 #include "netq.h"
-#include "utlist.h"
 
 #ifdef HAVE_ASSERT_H
 #include <assert.h>
@@ -49,20 +48,24 @@ netq_init() {
 
 int
 netq_insert_node(netq_t **queue, netq_t *node) {
-  netq_t *p;
+  netq_t *p, *op;
 
   assert(queue);
   assert(node);
 
   p = *queue;
-  while(p && p->t <= node->t)
+  op = NULL;
+  while(p && p->t <= node->t) {
+    op = p;
     p = p->next;
+  }
 
-  if (p)
-    LL_PREPEND_ELEM(*queue, p, node);
-  else
-    LL_APPEND(*queue, node);
-
+  node->next = p;
+  if(op) {
+    op->next = node;
+  } else {
+    *queue = node;
+  }
   return 1;
 }
 
@@ -80,19 +83,46 @@ netq_next(netq_t *p) {
 }
 
 void
-netq_remove(netq_t **queue, netq_t *p) {
-  if (!queue || !p)
-    return;
+netq_remove(netq_t **queue, netq_t *item) {
+{
+  struct netq_t *curr, *prev;
 
-  LL_DELETE(*queue, p);
+  if (!queue || !item) {
+    return;
+  }
+
+  if(*queue == NULL) {
+    return;
+  }
+
+  prev = NULL;
+  for(curr = *queue; curr != NULL; curr = curr->next) {
+    if(curr == item) {
+      if(prev == NULL) {
+	/* First on list */
+	*queue = curr->next;
+      } else {
+	/* Not first on list */
+	prev->next = curr->next;
+      }
+      curr->next = NULL;
+      return;
+    }
+    prev = curr;
+  }
+ }
 }
 
-netq_t *netq_pop_first(netq_t **queue) {
+netq_t
+*netq_pop_first(netq_t **queue) {
   netq_t *p = netq_head(queue);
-  
-  if (p)
-    LL_DELETE(*queue, p);
-  
+
+  if(p) {
+    /* remove the element from the list and update head */
+    *queue = p->next;
+    p->next = NULL;
+  }
+
   return p;
 }
 
@@ -112,20 +142,26 @@ netq_node_new(size_t size) {
   return node;
 }
 
-void 
-netq_node_free(netq_t *node) {
-  if (node)
+void
+netq_node_free(netq_t *node)
+{
+  if (node) {
     netq_free_node(node);
+  }
 }
 
-void 
-netq_delete_all(netq_t **queue) {
+void
+netq_delete_all(netq_t **queue)
+{
   netq_t *p, *tmp;
   if (queue) {
-    LL_FOREACH_SAFE(*queue,p,tmp) {
+    p = *queue;
+    while(p) {
+      tmp = p->next;
+      p->next = NULL;
       netq_free_node(p);
+      p = tmp;
     }
-
     *queue = NULL;
   }
 }
