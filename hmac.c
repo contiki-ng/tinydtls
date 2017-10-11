@@ -44,8 +44,7 @@ dtls_hmac_context_free(dtls_hmac_context_t *ctx) {
 }
 
 void
-dtls_hmac_storage_init(void)
-{
+dtls_hmac_storage_init(void) {
   memb_init(&hmac_context_storage);
 }
 
