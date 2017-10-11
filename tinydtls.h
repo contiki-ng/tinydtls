@@ -25,6 +25,7 @@
 #define _DTLS_TINYDTLS_H_
 
 #include "dtls-support-conf.h"
+#include <string.h>
 
 #ifdef DTLS_CONFIG_CONF_H
 #include DTLS_CONFIG_CONF_H
