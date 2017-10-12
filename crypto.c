@@ -35,36 +35,11 @@
 #include "netq.h"
 #include "lib/memb.h"
 
-#ifndef WITH_CONTIKI
-#include <pthread.h>
-static pthread_mutex_t cipher_context_mutex = PTHREAD_MUTEX_INITIALIZER;
-#define LOCK(P) pthread_mutex_lock(P)
-#define UNLOCK(P) pthread_mutex_unlock(P)
-#else
-/* WITH CONTIKI */
-#define LOCK(P)
-#define UNLOCK(P)
-#endif /* WITH_CONTIKI */
-
 #define HMAC_UPDATE_SEED(Context,Seed,Length)		\
   if (Seed) dtls_hmac_update(Context, (Seed), (Length))
 
 MEMB(handshake_storage, dtls_handshake_parameters_t, DTLS_HANDSHAKE_MAX);
 MEMB(security_storage, dtls_security_parameters_t, DTLS_SECURITY_MAX);
-
-static struct dtls_cipher_context_t cipher_context;
-
-
-static struct dtls_cipher_context_t *dtls_cipher_context_get(void)
-{
-  LOCK(&cipher_context_mutex);
-  return &cipher_context;
-}
-
-static void dtls_cipher_context_release(void)
-{
-  UNLOCK(&cipher_context_mutex);
-}
 
 void crypto_init()
 {
@@ -496,7 +471,7 @@ dtls_encrypt(const unsigned char *src, size_t length,
 	     const unsigned char *aad, size_t la)
 {
   int ret;
-  struct dtls_cipher_context_t *ctx = dtls_cipher_context_get();
+  struct dtls_cipher_context_t *ctx = dtls_cipher_context_aquire();
 
   ret = rijndael_set_key_enc_only(&ctx->data.ctx, key, 8 * keylen);
   if (ret < 0) {
@@ -510,7 +485,7 @@ dtls_encrypt(const unsigned char *src, size_t length,
   ret = dtls_ccm_encrypt(&ctx->data, src, length, buf, nounce, aad, la);
 
 error:
-  dtls_cipher_context_release();
+  dtls_cipher_context_release(ctx);
   return ret;
 }
 
@@ -522,7 +497,7 @@ dtls_decrypt(const unsigned char *src, size_t length,
 	     const unsigned char *aad, size_t la)
 {
   int ret;
-  struct dtls_cipher_context_t *ctx = dtls_cipher_context_get();
+  struct dtls_cipher_context_t *ctx = dtls_cipher_context_aquire();
 
   ret = rijndael_set_key_enc_only(&ctx->data.ctx, key, 8 * keylen);
   if (ret < 0) {
@@ -536,6 +511,6 @@ dtls_decrypt(const unsigned char *src, size_t length,
   ret = dtls_ccm_decrypt(&ctx->data, src, length, buf, nounce, aad, la);
 
 error:
-  dtls_cipher_context_release();
+  dtls_cipher_context_release(ctx);
   return ret;
 }

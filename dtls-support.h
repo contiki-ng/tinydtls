@@ -13,6 +13,9 @@ int dtls_get_random(unsigned long *rand);
 void dtls_set_retransmit_timer(dtls_context_t *context, unsigned int);
 void dtls_support_init(void);
 
+struct dtls_cipher_context_t *dtls_cipher_context_aquire(void);
+void dtls_cipher_context_release(struct dtls_cipher_context_t *ctx);
+
 /**
  * Resets the given session_t object @p sess to its default
  * values.  In particular, the member rlen must be initialized to the

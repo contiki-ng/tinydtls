@@ -18,8 +18,6 @@
 #ifndef _DTLS_HMAC_H_
 #define _DTLS_HMAC_H_
 
-#include <sys/types.h>
-
 #include "tinydtls.h"
 
 #ifdef WITH_SHA256

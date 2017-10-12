@@ -22,14 +22,11 @@
 
 #ifndef _DTLS_STATE_H_
 #define _DTLS_STATE_H_
-
-#include <sys/types.h>
 #include <stdint.h>
-
 #include "tinydtls.h"
 #include "hmac.h"
 
-typedef enum { 
+typedef enum {
   DTLS_STATE_INIT = 0, DTLS_STATE_WAIT_CLIENTHELLO, DTLS_STATE_WAIT_CLIENTCERTIFICATE,
   DTLS_STATE_WAIT_CLIENTKEYEXCHANGE, DTLS_STATE_WAIT_CERTIFICATEVERIFY,
   DTLS_STATE_WAIT_CHANGECIPHERSPEC,

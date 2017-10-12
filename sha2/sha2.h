@@ -39,20 +39,7 @@
 extern "C" {
 #endif
 
-
-/*
- * Import u_intXX_t size_t type definitions from system headers.  You
- * may need to change this, or define these things yourself in this
- * file.
- */
-#include <sys/types.h>
-
-#ifdef SHA2_USE_INTTYPES_H
-
 #include <inttypes.h>
-
-#endif /* SHA2_USE_INTTYPES_H */
-
 
 /*** SHA-256/384/512 Various Length Definitions ***********************/
 #define DTLS_SHA256_BLOCK_LENGTH		64
