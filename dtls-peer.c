@@ -16,14 +16,15 @@
  *******************************************************************************/
 
 #include "tinydtls.h"
-#include "peer.h"
+#include "dtls-peer.h"
 #include "dtls_debug.h"
 #include "lib/memb.h"
 
 MEMB(peer_storage, dtls_peer_t, DTLS_PEER_MAX);
 
 void
-peer_init() {
+dtls_peer_init(void)
+{
   memb_init(&peer_storage);
 }
 

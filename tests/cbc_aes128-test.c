@@ -3,8 +3,7 @@
 #include <string.h>
 
 #include "dtls_debug.h"
-#include "numeric.h"
-#include "crypto.h"
+#include "dtls-crypto.h"
 
 #include "cbc_aes128-testdata.c"
 

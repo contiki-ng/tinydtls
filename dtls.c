@@ -30,13 +30,13 @@
 #endif /* WITH_CONTIKI */
 
 #include "dtls_debug.h"
-#include "numeric.h"
+#include "dtls-numeric.h"
 #include "netq.h"
 #include "dtls.h"
-#include "hmac.h"
+#include "dtls-hmac.h"
 
-#include "alert.h"
-#include "prng.h"
+#include "dtls-alert.h"
+#include "dtls-prng.h"
 
 #include "dtls-support.h"
 
@@ -150,10 +150,10 @@ static const unsigned char cert_asn1_header[] = {
 void
 dtls_init() {
   dtls_clock_init();
-  crypto_init();
+  dtls_crypto_init();
   dtls_hmac_storage_init();
   netq_init();
-  peer_init();
+  dtls_peer_init();
   dtls_support_init();
   dtls_hmac_storage_init();
 }

@@ -16,7 +16,7 @@
  *******************************************************************************/
 
 /**
- * @file peer.h
+ * @file dtls-peer.h
  * @brief information about peers in a DTLS session
  */
 
@@ -24,8 +24,8 @@
 #define _DTLS_PEER_H_
 #include "tinydtls.h"
 
-#include "state.h"
-#include "crypto.h"
+#include "dtls-state.h"
+#include "dtls-crypto.h"
 
 typedef enum { DTLS_CLIENT=0, DTLS_SERVER } dtls_peer_type;
 
@@ -93,7 +93,7 @@ static inline void dtls_security_params_switch(dtls_peer_t *peer)
   peer->security_params[0] = security;
 }
 
-void peer_init(void);
+void dtls_peer_init(void);
 
 /**
  * Creates a new peer for given @p session. The current configuration

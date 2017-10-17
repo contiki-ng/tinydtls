@@ -20,7 +20,8 @@ VERSION:=0.8.6
 DTLS_SUPPORT ?= posix
 
 # files and flags
-SOURCES = dtls.c crypto.c ccm.c hmac.c netq.c peer.c dtls_debug.c
+SOURCES = dtls.c dtls-crypto.c dtls-ccm.c dtls-hmac.c netq.c dtls-peer.c
+SOURCES+= dtls_debug.c
 SOURCES+= aes/rijndael.c ecc/ecc.c sha2/sha2.c $(DTLS_SUPPORT)/dtls-support.c
 DTLS_DIRS:= aes ecc sta2 $(DTLS_SUPPORT)
 OBJECTS:= $(SOURCES:.c=.o)

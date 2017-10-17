@@ -4,8 +4,8 @@
 
 #include "tinydtls.h"
 //#include "dtls_debug.h"
-#include "numeric.h"
-#include "ccm.h"
+#include "dtls-numeric.h"
+#include "dtls-ccm.h"
 
 #include "ccm-testdata.c"
 

@@ -26,12 +26,12 @@
 
 #include <stdint.h>
 
-#include "state.h"
-#include "peer.h"
+#include "dtls-state.h"
+#include "dtls-peer.h"
 
-#include "alert.h"
-#include "crypto.h"
-#include "hmac.h"
+#include "dtls-alert.h"
+#include "dtls-crypto.h"
+#include "dtls-hmac.h"
 
 #include "tinydtls.h"
 #include "dtls_time.h"
@@ -577,7 +577,7 @@ int send_to_peer(struct dtls_context_t *ctx, session_t *session, uint8 *data, si
  * return the number of bytes written to @p result which must not exceed
  * @p result_length.
  * In case of an error, the function must return a negative value that 
- * corresponds to a valid error code defined in alert.h.
+ * corresponds to a valid error code defined in dtls-alert.h.
  * 
  * @code
 int get_psk_info(struct dtls_context_t *ctx UNUSED_PARAM,

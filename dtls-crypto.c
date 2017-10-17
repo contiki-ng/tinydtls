@@ -26,12 +26,12 @@
 #endif
 
 #include "dtls_debug.h"
-#include "numeric.h"
+#include "dtls-numeric.h"
 #include "dtls.h"
-#include "crypto.h"
-#include "ccm.h"
+#include "dtls-crypto.h"
+#include "dtls-ccm.h"
 #include "ecc/ecc.h"
-#include "prng.h"
+#include "dtls-prng.h"
 #include "netq.h"
 #include "lib/memb.h"
 
@@ -41,7 +41,8 @@
 MEMB(handshake_storage, dtls_handshake_parameters_t, DTLS_HANDSHAKE_MAX);
 MEMB(security_storage, dtls_security_parameters_t, DTLS_SECURITY_MAX);
 
-void crypto_init()
+void
+dtls_crypto_init(void)
 {
   memb_init(&handshake_storage);
   memb_init(&security_storage);

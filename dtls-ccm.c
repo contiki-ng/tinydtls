@@ -18,8 +18,8 @@
 #include <string.h>
 
 #include "tinydtls.h"
-#include "numeric.h"
-#include "ccm.h"
+#include "dtls-numeric.h"
+#include "dtls-ccm.h"
 
 #ifdef HAVE_ASSERT_H
 # include <assert.h>

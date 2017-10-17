@@ -28,7 +28,7 @@
 #endif
 
 #include "dtls_debug.h"
-#include "hmac.h"
+#include "dtls-hmac.h"
 #include "lib/memb.h"
 
 MEMB(hmac_context_storage, dtls_hmac_context_t, DTLS_HASH_MAX);
