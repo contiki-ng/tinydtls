@@ -220,9 +220,9 @@ typedef struct dtls_context_t {
 
   struct netq_t *sendqueue;     /**< the packets to send */
 
-  void *app;			/**< application-specific data */
+  void *app;                    /**< application-specific data */
 
-  dtls_handler_t *h;		/**< callback handlers */
+  const dtls_handler_t *h;      /**< callback handlers */
 
   unsigned char readbuf[DTLS_MAX_BUF];
 } dtls_context_t;
@@ -245,7 +245,9 @@ void dtls_free_context(dtls_context_t *ctx);
 #define dtls_get_app_data(CTX) ((CTX)->app)
 
 /** Sets the callback handler object for @p ctx to @p h. */
-static inline void dtls_set_handler(dtls_context_t *ctx, dtls_handler_t *h) {
+static inline void dtls_set_handler(dtls_context_t *ctx,
+                                    const dtls_handler_t *h)
+{
   ctx->h = h;
 }
 
@@ -485,7 +487,7 @@ make install
  dtls_context_t *the_context = NULL;
  int fd, result;
 
- static dtls_handler_t cb = {
+ static const dtls_handler_t cb = {
    .write = send_to_peer,
    .read  = read_from_peer,
    .event = NULL,
@@ -674,7 +676,7 @@ int send_to_peer(struct dtls_context_t *, session_t *, uint8 *, size_t);
 static struct uip_udp_conn *server_conn;
 static dtls_context_t *dtls_context;
 
-static dtls_handler_t cb = {
+static const dtls_handler_t cb = {
   .write = send_to_peer,
   .read  = read_from_peer,
   .event = NULL,
