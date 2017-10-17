@@ -34,7 +34,6 @@
 #include "dtls-hmac.h"
 
 #include "tinydtls.h"
-#include "dtls_time.h"
 
 #ifndef DTLSv12
 #define DTLS_VERSION 0xfeff	/* DTLS v1.1 */
@@ -210,7 +209,7 @@ struct netq_t;
 /** Holds global information of the DTLS engine. */
 typedef struct dtls_context_t {
   unsigned char cookie_secret[DTLS_COOKIE_SECRET_LENGTH];
-  clock_time_t cookie_secret_age; /**< the time the secret has been generated */
+  dtls_tick_t cookie_secret_age; /**< the time the secret has been generated */
 
   dtls_peer_t *peers;		/**< peer hash map */
 
@@ -306,7 +305,7 @@ int dtls_write(struct dtls_context_t *ctx, session_t *session,
  *  of the next scheduled retransmission, or @c 0 when no packets are
  *  waiting.
  */
-void dtls_check_retransmit(dtls_context_t *context, clock_time_t *next,
+void dtls_check_retransmit(dtls_context_t *context, dtls_tick_t *next,
                            int all);
 
 #define DTLS_COOKIE_LENGTH 16

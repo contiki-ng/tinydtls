@@ -22,9 +22,9 @@ int main(int argc, char **argv) {
   struct netq_t *nq = NULL, *node;
   int i;
     
-  clock_time_t timestamps[] = { 300, 100, 200, 400, 500 };
+  dtls_tick_t timestamps[] = { 300, 100, 200, 400, 500 };
 
-  for (i = 0; i < sizeof(timestamps)/sizeof(clock_time_t); i++) {
+  for (i = 0; i < sizeof(timestamps)/sizeof(dtls_tick_t); i++) {
     node = netq_node_new(0);
 
     if (!node) {

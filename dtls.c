@@ -18,7 +18,6 @@
  *******************************************************************************/
 
 #include "tinydtls.h"
-#include "dtls_time.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,7 +32,6 @@
 #include "dtls-numeric.h"
 #include "netq.h"
 #include "dtls.h"
-#include "dtls-hmac.h"
 
 #include "dtls-alert.h"
 #include "dtls-prng.h"
@@ -149,12 +147,11 @@ static const unsigned char cert_asn1_header[] = {
 
 void
 dtls_init() {
-  dtls_clock_init();
+  dtls_support_init();
   dtls_crypto_init();
   dtls_hmac_storage_init();
   netq_init();
   dtls_peer_init();
-  dtls_support_init();
   dtls_hmac_storage_init();
 }
 
@@ -1464,9 +1461,9 @@ dtls_send_multi(dtls_context_t *ctx, dtls_peer_t *peer,
     if (n) {
       dtls_tick_t now;
       dtls_ticks(&now);
-      n->t = now + 2 * CLOCK_SECOND;
+      n->t = now + 2 * DTLS_TICKS_PER_SECOND;
       n->retransmit_cnt = 0;
-      n->timeout = 2 * CLOCK_SECOND;
+      n->timeout = 2 * DTLS_TICKS_PER_SECOND;
       n->peer = peer;
       n->epoch = (security) ? security->epoch : 0;
       n->type = type;
@@ -1774,7 +1771,7 @@ dtls_send_server_hello(dtls_context_t *ctx, dtls_peer_t *peer)
   /* Set server random: First 4 bytes are the server's Unix timestamp,
    * followed by 28 bytes of generate random data. */
   dtls_ticks(&now);
-  dtls_int_to_uint32(handshake->tmp.random.server, now / CLOCK_SECOND);
+  dtls_int_to_uint32(handshake->tmp.random.server, now / DTLS_TICKS_PER_SECOND);
   dtls_prng(handshake->tmp.random.server + 4, 28);
 
   memcpy(p, handshake->tmp.random.server, DTLS_RANDOM_LENGTH);
@@ -2353,7 +2350,7 @@ dtls_send_client_hello(dtls_context_t *ctx, dtls_peer_t *peer,
     /* Set client random: First 4 bytes are the client's Unix timestamp,
      * followed by 28 bytes of generate random data. */
     dtls_ticks(&now);
-    dtls_int_to_uint32(handshake->tmp.random.client, now / CLOCK_SECOND);
+    dtls_int_to_uint32(handshake->tmp.random.client, now / DTLS_TICKS_PER_SECOND);
     dtls_prng(handshake->tmp.random.client + sizeof(uint32_t),
          DTLS_RANDOM_LENGTH - sizeof(uint32_t));
   }
@@ -3969,7 +3966,7 @@ dtls_stop_retransmission(dtls_context_t *context, dtls_peer_t *peer) {
 }
 
 void
-dtls_check_retransmit(dtls_context_t *context, clock_time_t *next, int all) {
+dtls_check_retransmit(dtls_context_t *context, dtls_tick_t *next, int all) {
   dtls_tick_t now;
   netq_t *node = netq_head(&context->sendqueue);
 

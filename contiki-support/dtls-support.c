@@ -184,11 +184,6 @@ dtls_dsrv_hexdump_log(log_t level, const char *name, const unsigned char *buf, s
 /* --------- time support --------- */
 
 void
-dtls_clock_init(void)
-{
-}
-
-void
 dtls_ticks(dtls_tick_t *t)
 {
   *t = clock_time();

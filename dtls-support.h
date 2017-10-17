@@ -51,5 +51,13 @@ void dtls_session_print(const session_t *a);
  */
 void dtls_session_snprint(const session_t *a, char *buf, size_t size);
 
+/**
+ * Clock handling
+ */
+void dtls_ticks(dtls_tick_t *t);
+
+#ifndef DTLS_TICKS_PER_SECOND
+#error DTLS_TICKS_PER_SECOND is not defined
+#endif /* DTLS_TICKS_PER_SECOND */
 
 #endif /* DTLS_SUPPORT_H_ */

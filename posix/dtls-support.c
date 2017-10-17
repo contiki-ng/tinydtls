@@ -3,10 +3,10 @@
 
 #include "tinydtls.h"
 #include "lib/memb.h"
-#include <stdlib.h>
 #include "dtls-support.h"
 #include "dtls_debug.h"
-#include "dtls_time.h"
+#include <stdlib.h>
+#include <sys/time.h>
 #ifdef HAVE_ASSERT_H
 #include <assert.h>
 #endif
@@ -214,19 +214,15 @@ dtls_dsrv_hexdump_log(log_t level, const char *name, const unsigned char *buf, s
 
 /* --------- time support ----------- */
 
-time_t dtls_clock_offset;
+static time_t dtls_clock_offset;
 
 void
-dtls_clock_init(void) {
-  dtls_clock_offset = time(NULL);
-  dtls_clock_offset = 0;
-}
-
-void dtls_ticks(dtls_tick_t *t) {
+dtls_ticks(dtls_tick_t *t)
+{
   struct timeval tv;
   gettimeofday(&tv, NULL);
-  *t = (tv.tv_sec - dtls_clock_offset) * DTLS_TICKS_PER_SECOND 
-    + (tv.tv_usec * DTLS_TICKS_PER_SECOND / 1000000);
+  *t = (tv.tv_sec - dtls_clock_offset) * (dtls_tick_t)DTLS_TICKS_PER_SECOND
+    + (tv.tv_usec * (dtls_tick_t)DTLS_TICKS_PER_SECOND / 1000000);
 }
 
 int
@@ -292,7 +288,17 @@ dtls_session_equals(const session_t *a, const session_t *b) {
 
 
 /* The init */
-void dtls_support_init(void)
+void
+dtls_support_init(void)
 {
-  /* setup whatever */
+#ifdef HAVE_TIME_H
+  dtls_clock_offset = time(NULL);
+#else
+# ifdef __GNUC__
+  /* Issue a warning when using gcc. Other prepropressors do
+   *  not seem to have a similar feature. */
+#  warning "cannot initialize clock"
+# endif
+  dtls_clock_offset = 0;
+#endif
 }

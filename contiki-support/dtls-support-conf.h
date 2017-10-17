@@ -18,6 +18,10 @@ typedef struct {
   int ifindex;
 } session_t;
 
+#define DTLS_TICKS_PER_SECOND CLOCK_SECOND
+
+typedef clock_time_t dtls_tick_t;
+
 #define WITH_CONTIKI 1
 
 #define HAVE_ASSERT_H 1

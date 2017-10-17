@@ -20,7 +20,6 @@
 
 #include "tinydtls.h"
 #include "dtls.h"
-#include "dtls_time.h"
 
 /**
  * \defgroup netq Network Packet Queue
@@ -50,7 +49,7 @@ typedef unsigned char netq_packet_t[DTLS_MAX_BUF];
 typedef struct netq_t {
   struct netq_t *next;
 
-  clock_time_t t;	        /**< when to send PDU for the next time */
+  dtls_tick_t t;	        /**< when to send PDU for the next time */
   unsigned int timeout;		/**< randomized timeout value */
 
   dtls_peer_t *peer;		/**< remote address */
