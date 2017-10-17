@@ -28,28 +28,10 @@
 # endif /* DEBUG */
 #include "net/ip/uip-debug.h"
 
-#ifdef CONTIKI_TARGET_MBXXX
-extern char __Stack_Init, _estack;
-
-static inline void check_stack() {
-  const char *p = &__Stack_Init;
-  while (p < &_estack && *p == 0x38) {
-    p++;
-  }
-
-  PRINTF("Stack: %d bytes used (%d free)\n", &_estack - p, p - &__Stack_Init);
-}
-#else /* CONTIKI_TARGET_MBXXX */
-static inline void check_stack() {
-}
-#endif /* CONTIKI_TARGET_MBXXX */
 #else /* WITH_CONTKI */
 #ifndef PRINTF
 #define PRINTF(...)
 #endif /* PRINTF */
-
-static inline void check_stack() {
-}
 #endif
 
 /** Pre-defined log levels akin to what is used in \b syslog. */
