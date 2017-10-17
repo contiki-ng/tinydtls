@@ -1,12 +1,25 @@
 #ifndef DTLS_SUPPORT_CONF_H_
 #define DTLS_SUPPORT_CONF_H_
 
-#include "ip/uip.h"
+#include "net/ip/uip.h"
+#include "sys/ctimer.h"
+#include <stdint.h>
+
+typedef struct {
+  struct ctimer retransmit_timer;
+} dtls_support_context_state_t;
+
+#define DTLS_SUPPORT_CONF_CONTEXT_STATE dtls_support_context_state_t
+
 typedef struct {
   unsigned char size;
   uip_ipaddr_t addr;
-  unsigned short port;
+  uint16_t port;
   int ifindex;
 } session_t;
+
+#define WITH_CONTIKI 1
+
+#define HAVE_ASSERT_H 1
 
 #endif /* DTLS_SUPPORT_CONF_H_ */

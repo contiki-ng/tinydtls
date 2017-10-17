@@ -1,4 +1,5 @@
 #include "dtls-support.h"
+#include "lib/random.h"
 
 static dtls_context_t the_dtls_context;
 static struct dtls_cipher_context_t cipher_context;
@@ -132,8 +133,9 @@ dsrv_log(log_t level, char *format, ...) {
   if (print_timestamp(timebuf,sizeof(timebuf), clock_time()))
     PRINTF("%s ", timebuf);
 
-  if (level <= DTLS_LOG_DEBUG) 
+  if(level <= DTLS_LOG_DEBUG) {
     PRINTF("%s ", loglevels[level]);
+  }
 
   va_start(ap, format);
   vprintf(format, ap);
@@ -181,33 +183,42 @@ dtls_dsrv_hexdump_log(log_t level, const char *name, const unsigned char *buf, s
 
 /* --------- time support --------- */
 
-clock_time_t dtls_clock_offset;
-
 void
-dtls_clock_init(void) {
-  clock_init();
-  dtls_clock_offset = clock_time();
+dtls_clock_init(void)
+{
 }
 
 void
-dtls_ticks(dtls_tick_t *t) {
+dtls_ticks(dtls_tick_t *t)
+{
   *t = clock_time();
 }
 
 
 int
-dtls_get_random(unsigned int *rand)
+dtls_get_random(unsigned long *result)
 {
-  *rand = clock_time();
+  uint8_t *ptr;
+  int i;
+  ptr = (uint8_t *)result;
+
+  if(ptr) {
+    for(i = 0; i < sizeof(unsigned long); i++) {
+      ptr[i] = random_rand() & 0xff;
+    }
+    return 1;
+  }
+  return 0;
 }
 
 
-static void dtls_retransmit_callback((void *) ptr);
+static void dtls_retransmit_callback(void *ptr);
 
 void
-dtls_support_init(void) {
+dtls_support_init(void)
+{
   /* Start the ctimer */
-  ctimer_set(&the_dtls_context.retransmit_timer, 0xFFFF,
+  ctimer_set(&the_dtls_context.support.retransmit_timer, 0xFFFF,
              dtls_retransmit_callback, NULL);
 }
 

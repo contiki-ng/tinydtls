@@ -213,9 +213,10 @@ typedef struct dtls_context_t {
   clock_time_t cookie_secret_age; /**< the time the secret has been generated */
 
   dtls_peer_t *peers;		/**< peer hash map */
-#ifdef WITH_CONTIKI
-  struct etimer retransmit_timer; /**< fires when the next packet must be sent */
-#endif /* WITH_CONTIKI */
+
+#ifdef DTLS_SUPPORT_CONF_CONTEXT_STATE
+  DTLS_SUPPORT_CONF_CONTEXT_STATE support;
+#endif /* DTLS_SUPPORT_CONF_CONTEXT_STATE */
 
   struct netq_t *sendqueue;     /**< the packets to send */
 

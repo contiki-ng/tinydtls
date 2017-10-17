@@ -150,8 +150,6 @@ dtls_fls(unsigned int i) {
 }
 #endif /* HAVE_FLS */
 
-#define uthash_fatal(msg) return(-1) /* fatal error in uthash */
-
 #include "dtls-support.h"
 
 #endif /* _DTLS_TINYDTLS_H_ */
