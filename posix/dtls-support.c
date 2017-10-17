@@ -17,7 +17,7 @@
 
 #include <pthread.h>
 static pthread_mutex_t cipher_context_mutex = PTHREAD_MUTEX_INITIALIZER;
-static struct dtls_cipher_context_t cipher_context;
+static dtls_cipher_context_t cipher_context;
 #define LOCK(P) pthread_mutex_lock(P)
 #define UNLOCK(P) pthread_mutex_unlock(P)
 
@@ -46,15 +46,15 @@ print_timestamp(char *s, size_t len, time_t t) {
   return strftime(s, len, "%b %d %H:%M:%S", tmp);
 }
 
-struct dtls_cipher_context_t
-*dtls_cipher_context_get(void)
+dtls_cipher_context_t *
+dtls_cipher_context_get(void)
 {
   LOCK(&cipher_context_mutex);
   return &cipher_context;
 }
 
 void
-dtls_cipher_context_release(struct dtls_cipher_context_t *c)
+dtls_cipher_context_release(dtls_cipher_context_t *c)
 {
   /* just one single context for now */
   UNLOCK(&cipher_context_mutex);

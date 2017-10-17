@@ -3540,11 +3540,11 @@ handle_alert(dtls_context_t *ctx, dtls_peer_t *peer,
     delete_peer(&ctx->peers, peer);
 
 #ifdef WITH_CONTIKI
-#ifndef NDEBUG
-    PRINTF("removed peer [");
-    PRINT6ADDR(&peer->session.addr);
-    PRINTF("]:%d\n", uip_ntohs(peer->session.port));
-#endif
+#if DEBUG && ! defined(NDEBUG)
+    PRINTF("removed peer ");
+    dtls_session_print(&peer->session);
+    PRINTF("\n");
+#endif /* DEBUG && ! defined(NDEBUG) */
 #endif /* WITH_CONTIKI */
 
     free_peer = 1;
@@ -3788,8 +3788,6 @@ dtls_new_context(void *app_data) {
 
   memset(c, 0, sizeof(dtls_context_t));
   c->app = app_data;
-
-  dtls_set_retransmit_timer(c, 0xffff);
 
   if (dtls_prng(c->cookie_secret, DTLS_COOKIE_SECRET_LENGTH))
     c->cookie_secret_age = now;

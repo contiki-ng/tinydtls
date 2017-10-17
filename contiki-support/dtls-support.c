@@ -2,7 +2,7 @@
 #include "lib/random.h"
 
 static dtls_context_t the_dtls_context;
-static struct dtls_cipher_context_t cipher_context;
+static dtls_cipher_context_t cipher_context;
 
 dtls_context_t *malloc_context() {
   return &the_dtls_context;
@@ -15,14 +15,14 @@ PROCESS(dtls_retransmit_process, "DTLS retransmit process");
 
 /* In Contiki we know that there should be no threads accessing the
    functions at the same time which means there is no need for locking */
-struct dtls_cipher_context_t
-*dtls_cipher_context_get(void)
+dtls_cipher_context_t *
+dtls_cipher_context_get(void)
 {
   return &cipher_context;
 }
 
 void
-dtls_cipher_context_release(struct dtls_cipher_context_t *c)
+dtls_cipher_context_release(dtls_cipher_context_t *c)
 {
 }
 
