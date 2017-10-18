@@ -24,7 +24,6 @@
 #ifndef _DTLS_TINYDTLS_H_
 #define _DTLS_TINYDTLS_H_
 
-#include "dtls-support-conf.h"
 #include <string.h>
 
 #ifdef DTLS_CONFIG_CONF_H
@@ -32,6 +31,8 @@
 #else /* DTLS_CONFIG_CONF_H */
 #include "dtls_config.h"
 #endif /* DTLS_CONFIG_CONF_H */
+
+#include "dtls-support-conf.h"
 
 #ifndef DTLSv12
 /* The current version of tinyDTLS supports DTLSv1.2 only. */
