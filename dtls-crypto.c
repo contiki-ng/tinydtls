@@ -472,7 +472,7 @@ dtls_encrypt(const unsigned char *src, size_t length,
 	     const unsigned char *aad, size_t la)
 {
   int ret;
-  struct dtls_cipher_context_t *ctx = dtls_cipher_context_aquire();
+  dtls_cipher_context_t *ctx = dtls_cipher_context_acquire();
 
   ret = rijndael_set_key_enc_only(&ctx->data.ctx, key, 8 * keylen);
   if (ret < 0) {
@@ -498,7 +498,7 @@ dtls_decrypt(const unsigned char *src, size_t length,
 	     const unsigned char *aad, size_t la)
 {
   int ret;
-  struct dtls_cipher_context_t *ctx = dtls_cipher_context_aquire();
+  dtls_cipher_context_t *ctx = dtls_cipher_context_acquire();
 
   ret = rijndael_set_key_enc_only(&ctx->data.ctx, key, 8 * keylen);
   if (ret < 0) {

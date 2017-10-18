@@ -47,7 +47,7 @@ print_timestamp(char *s, size_t len, time_t t) {
 }
 
 dtls_cipher_context_t *
-dtls_cipher_context_aquire(void)
+dtls_cipher_context_acquire(void)
 {
   LOCK(&cipher_context_mutex);
   return &cipher_context;

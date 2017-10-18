@@ -13,7 +13,7 @@ int dtls_get_random(unsigned long *rand);
 void dtls_set_retransmit_timer(dtls_context_t *context, unsigned int);
 void dtls_support_init(void);
 
-dtls_cipher_context_t *dtls_cipher_context_aquire(void);
+dtls_cipher_context_t *dtls_cipher_context_acquire(void);
 void dtls_cipher_context_release(dtls_cipher_context_t *ctx);
 
 /**
