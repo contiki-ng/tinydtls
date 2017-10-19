@@ -84,41 +84,28 @@ add_auth_data(rijndael_ctx *ctx, const unsigned char *msg, size_t la,
   if (!la)
     return;
 
-#ifndef WITH_CONTIKI
-    if (la < 0xFF00) {		/* 2^16 - 2^8 */
-      j = 2;
-      dtls_int_to_uint16(B, la);
+  if (la < 0xFF00) {		/* 2^16 - 2^8 */
+    j = 2;
+    dtls_int_to_uint16(B, la);
   } else if (la <= UINT32_MAX) {
-      j = 6;
-      dtls_int_to_uint16(B, 0xFFFE);
-      dtls_int_to_uint32(B+2, la);
-    } else {
-      j = 10;
-      dtls_int_to_uint16(B, 0xFFFF);
-      dtls_int_to_uint64(B+2, la);
-    }
-#else /* WITH_CONTIKI */
-  /* With Contiki, we are building for small devices and thus
-   * anticipate that the number of additional authentication bytes
-   * will not exceed 65280 bytes (0xFF00) and we can skip the
-   * workarounds required for j=6 and j=10 on devices with a word size
-   * of 32 bits or 64 bits, respectively.
-   */
+    j = 6;
+    dtls_int_to_uint16(B, 0xFFFE);
+    dtls_int_to_uint32(B+2, la);
+  } else {
+    j = 10;
+    dtls_int_to_uint16(B, 0xFFFF);
+    dtls_int_to_uint64(B+2, la);
+  }
 
-  assert(la < 0xFF00);
-  j = 2;
-  dtls_int_to_uint16(B, la);
-#endif /* WITH_CONTIKI */
+  i = min(DTLS_CCM_BLOCKSIZE - j, la);
+  memcpy(B + j, msg, i);
+  la -= i;
+  msg += i;
 
-    i = min(DTLS_CCM_BLOCKSIZE - j, la);
-    memcpy(B + j, msg, i);
-    la -= i;
-    msg += i;
-    
-    memxor(B, X, DTLS_CCM_BLOCKSIZE);
-  
+  memxor(B, X, DTLS_CCM_BLOCKSIZE);
+
   rijndael_encrypt(ctx, B, X);
-  
+
   while (la > DTLS_CCM_BLOCKSIZE) {
     for (i = 0; i < DTLS_CCM_BLOCKSIZE; ++i)
       B[i] = X[i] ^ *msg++;
@@ -126,14 +113,14 @@ add_auth_data(rijndael_ctx *ctx, const unsigned char *msg, size_t la,
 
     rijndael_encrypt(ctx, B, X);
   }
-  
+
   if (la) {
     memset(B, 0, DTLS_CCM_BLOCKSIZE);
     memcpy(B, msg, la);
     memxor(B, X, DTLS_CCM_BLOCKSIZE);
 
-    rijndael_encrypt(ctx, B, X);  
-  } 
+    rijndael_encrypt(ctx, B, X);
+  }
 }
 
 static inline void
