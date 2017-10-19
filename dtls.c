@@ -116,11 +116,11 @@ add_peer(dtls_peer_t **peers, dtls_peer_t *peer)
  * trouble. Note that this macro jumps out of the current program flow
  * when the message is too short. Beware!
  */
-#define SKIP_VAR_FIELD(P,L,T) {						\
-    if (L < dtls_ ## T ## _to_int(P) + sizeof(T))			\
-      goto error;							\
-    L -= dtls_ ## T ## _to_int(P) + sizeof(T);				\
-    P += dtls_ ## T ## _to_int(P) + sizeof(T);				\
+#define SKIP_VAR_FIELD(P,L) {						\
+    if (L < dtls_uint8_to_int(P) + sizeof(uint8_t))			\
+      goto error;			       		 	        \
+    L -= dtls_uint8_to_int(P) + sizeof(uint8_t);			\
+    P += dtls_uint8_to_int(P) + sizeof(uint8_t);  			\
   }
 
 /* some constants for the PRF */
@@ -167,7 +167,7 @@ dtls_init() {
 static int
 dtls_send_multi(dtls_context_t *ctx, dtls_peer_t *peer,
 		dtls_security_parameters_t *security , session_t *session,
-		unsigned char type, uint8 *buf_array[],
+		unsigned char type, uint8_t *buf_array[],
 		size_t buf_len_array[], size_t buf_array_len);
 
 /** 
@@ -186,7 +186,7 @@ dtls_send_multi(dtls_context_t *ctx, dtls_peer_t *peer,
  */
 static int
 dtls_send(dtls_context_t *ctx, dtls_peer_t *peer, unsigned char type,
-	  uint8 *buf, size_t buflen) {
+	  uint8_t *buf, size_t buflen) {
   return dtls_send_multi(ctx, peer, dtls_security_params(peer), &peer->session,
 			 type, &buf, &buflen, 1);
 }
@@ -222,7 +222,7 @@ dtls_add_peer(dtls_context_t *ctx, dtls_peer_t *peer) {
 
 int
 dtls_write(struct dtls_context_t *ctx, 
-	   session_t *dst, uint8 *buf, size_t len) {
+	   session_t *dst, uint8_t *buf, size_t len) {
   
   dtls_peer_t *peer = dtls_get_peer(ctx, dst);
 
@@ -246,10 +246,10 @@ dtls_write(struct dtls_context_t *ctx,
 }
 
 static int
-dtls_get_cookie(uint8 *msg, size_t msglen, uint8 **cookie) {
+dtls_get_cookie(uint8_t *msg, size_t msglen, uint8_t **cookie) {
   /* To access the cookie, we have to determine the session id's
    * length and skip the whole thing. */
-  if (msglen < DTLS_HS_LENGTH + DTLS_CH_LENGTH + sizeof(uint8))
+  if (msglen < DTLS_HS_LENGTH + DTLS_CH_LENGTH + sizeof(uint8_t))
     return dtls_alert_fatal_create(DTLS_ALERT_HANDSHAKE_FAILURE);
 
   if (dtls_uint16_to_int(msg + DTLS_HS_LENGTH) != DTLS_VERSION)
@@ -258,12 +258,12 @@ dtls_get_cookie(uint8 *msg, size_t msglen, uint8 **cookie) {
   msglen -= DTLS_HS_LENGTH + DTLS_CH_LENGTH;
   msg += DTLS_HS_LENGTH + DTLS_CH_LENGTH;
 
-  SKIP_VAR_FIELD(msg, msglen, uint8); /* skip session id */
+  SKIP_VAR_FIELD(msg, msglen); /* skip session id */
 
-  if (msglen < (*msg & 0xff) + sizeof(uint8))
+  if (msglen < (*msg & 0xff) + sizeof(uint8_t))
     return dtls_alert_fatal_create(DTLS_ALERT_HANDSHAKE_FAILURE);
   
-  *cookie = msg + sizeof(uint8);
+  *cookie = msg + sizeof(uint8_t);
   return dtls_uint8_to_int(msg);
 
  error:
@@ -273,8 +273,8 @@ dtls_get_cookie(uint8 *msg, size_t msglen, uint8 **cookie) {
 static int
 dtls_create_cookie(dtls_context_t *ctx, 
 		   session_t *session,
-		   uint8 *msg, size_t msglen,
-		   uint8 *cookie, int *clen) {
+		   uint8_t *msg, size_t msglen,
+		   uint8_t *cookie, int *clen) {
   unsigned char buf[DTLS_HMAC_MAX];
   size_t len, e;
 
@@ -304,15 +304,15 @@ dtls_create_cookie(dtls_context_t *ctx,
   /* feed in the beginning of the Client Hello up to and including the
      session id */
   e = sizeof(dtls_client_hello_t);
-  e += (*(msg + DTLS_HS_LENGTH + e) & 0xff) + sizeof(uint8);
+  e += (*(msg + DTLS_HS_LENGTH + e) & 0xff) + sizeof(uint8_t);
   if (e + DTLS_HS_LENGTH > msglen)
     return dtls_alert_fatal_create(DTLS_ALERT_HANDSHAKE_FAILURE);
 
   dtls_hmac_update(&hmac_context, msg + DTLS_HS_LENGTH, e);
   
   /* skip cookie bytes and length byte */
-  e += *(uint8 *)(msg + DTLS_HS_LENGTH + e) & 0xff;
-  e += sizeof(uint8);
+  e += *(uint8_t *)(msg + DTLS_HS_LENGTH + e) & 0xff;
+  e += sizeof(uint8_t);
   if (e + DTLS_HS_LENGTH > msglen)
     return dtls_alert_fatal_create(DTLS_ALERT_HANDSHAKE_FAILURE);
 
@@ -347,7 +347,7 @@ static char const content_types[] = {
  * 
  */
 static unsigned int
-is_record(uint8 *msg, size_t msglen) {
+is_record(uint8_t *msg, size_t msglen) {
   unsigned int rlen = 0;
 
   if (msglen >= DTLS_RH_LENGTH	/* FIXME allow empty records? */
@@ -375,12 +375,12 @@ is_record(uint8 *msg, size_t msglen) {
  * \return pointer to the next byte after the written header.
  * The length will be set to 0 and has to be changed before sending.
  */ 
-static inline uint8 *
-dtls_set_record_header(uint8 type, dtls_security_parameters_t *security,
-		       uint8 *buf) {
+static inline uint8_t *
+dtls_set_record_header(uint8_t type, dtls_security_parameters_t *security,
+		       uint8_t *buf) {
   
   dtls_int_to_uint8(buf, type);
-  buf += sizeof(uint8);
+  buf += sizeof(uint8_t);
 
   dtls_int_to_uint16(buf, DTLS_VERSION);
   buf += sizeof(uint16_t);
@@ -409,14 +409,14 @@ dtls_set_record_header(uint8 type, dtls_security_parameters_t *security,
  * bytes. Increments message sequence number counter of \p peer.
  * \return pointer to the next byte after \p buf
  */ 
-static inline uint8 *
-dtls_set_handshake_header(uint8 type, dtls_peer_t *peer, 
+static inline uint8_t *
+dtls_set_handshake_header(uint8_t type, dtls_peer_t *peer, 
 			  int length, 
 			  int frag_offset, int frag_length, 
-			  uint8 *buf) {
+			  uint8_t *buf) {
   
   dtls_int_to_uint8(buf, type);
-  buf += sizeof(uint8);
+  buf += sizeof(uint8_t);
 
   dtls_int_to_uint24(buf, length);
   buf += 3; /* 24 bits */
@@ -442,7 +442,7 @@ dtls_set_handshake_header(uint8 type, dtls_peer_t *peer,
 }
 
 /** only one compression method is currently defined */
-static uint8 compression_methods[] = {
+static uint8_t compression_methods[] = {
   TLS_COMPRESSION_NULL
 };
 
@@ -623,7 +623,7 @@ calculate_key_block(dtls_context_t *ctx,
   unsigned char *pre_master_secret;
   int pre_master_len = 0;
   dtls_security_parameters_t *security = dtls_security_params_next(peer);
-  uint8 master_secret[DTLS_MASTER_SECRET_LENGTH];
+  uint8_t master_secret[DTLS_MASTER_SECRET_LENGTH];
 
   if (!security) {
     return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
@@ -717,7 +717,7 @@ calculate_key_block(dtls_context_t *ctx,
 }
 
 /* TODO: add a generic method which iterates over a list and searches for a specific key */
-static int verify_ext_eliptic_curves(uint8 *data, size_t data_length) {
+static int verify_ext_eliptic_curves(uint8_t *data, size_t data_length) {
   int i, curve_name;
 
   /* length of curve list */
@@ -741,21 +741,21 @@ static int verify_ext_eliptic_curves(uint8 *data, size_t data_length) {
   return dtls_alert_fatal_create(DTLS_ALERT_HANDSHAKE_FAILURE);
 }
 
-static int verify_ext_cert_type(uint8 *data, size_t data_length) {
+static int verify_ext_cert_type(uint8_t *data, size_t data_length) {
   int i, cert_type;
 
   /* length of cert type list */
   i = dtls_uint8_to_int(data);
-  data += sizeof(uint8);
-  if (i + sizeof(uint8) != data_length) {
+  data += sizeof(uint8_t);
+  if (i + sizeof(uint8_t) != data_length) {
     dtls_warn("the list of the supported certificate types should be tls extension length - 1\n");
     return dtls_alert_fatal_create(DTLS_ALERT_HANDSHAKE_FAILURE);
   }
 
-  for (i = data_length - sizeof(uint8); i > 0; i -= sizeof(uint8)) {
+  for (i = data_length - sizeof(uint8_t); i > 0; i -= sizeof(uint8_t)) {
     /* check if this cert type is supported */
     cert_type = dtls_uint8_to_int(data);
-    data += sizeof(uint8);
+    data += sizeof(uint8_t);
 
     if (cert_type == TLS_CERT_TYPE_RAW_PUBLIC_KEY)
       return 0;
@@ -765,21 +765,21 @@ static int verify_ext_cert_type(uint8 *data, size_t data_length) {
   return dtls_alert_fatal_create(DTLS_ALERT_HANDSHAKE_FAILURE);
 }
 
-static int verify_ext_ec_point_formats(uint8 *data, size_t data_length) {
+static int verify_ext_ec_point_formats(uint8_t *data, size_t data_length) {
   int i, cert_type;
 
   /* length of ec_point_formats list */
   i = dtls_uint8_to_int(data);
-  data += sizeof(uint8);
-  if (i + sizeof(uint8) != data_length) {
+  data += sizeof(uint8_t);
+  if (i + sizeof(uint8_t) != data_length) {
     dtls_warn("the list of the supported ec_point_formats should be tls extension length - 1\n");
     return dtls_alert_fatal_create(DTLS_ALERT_HANDSHAKE_FAILURE);
   }
 
-  for (i = data_length - sizeof(uint8); i > 0; i -= sizeof(uint8)) {
+  for (i = data_length - sizeof(uint8_t); i > 0; i -= sizeof(uint8_t)) {
     /* check if this ec_point_format is supported */
     cert_type = dtls_uint8_to_int(data);
-    data += sizeof(uint8);
+    data += sizeof(uint8_t);
 
     if (cert_type == TLS_EXT_EC_POINT_FORMATS_UNCOMPRESSED)
       return 0;
@@ -794,7 +794,7 @@ static int verify_ext_ec_point_formats(uint8 *data, size_t data_length) {
  */
 static int
 dtls_check_tls_extension(dtls_peer_t *peer,
-			 uint8 *data, size_t data_length, int client_hello)
+			 uint8_t *data, size_t data_length, int client_hello)
 {
   uint16_t i, j;
   int ext_elliptic_curve = 0;
@@ -918,7 +918,7 @@ error:
 static int
 dtls_update_parameters(dtls_context_t *ctx, 
 		       dtls_peer_t *peer,
-		       uint8 *data, size_t data_length) {
+		       uint8_t *data, size_t data_length) {
   int i, j;
   int ok;
   dtls_handshake_parameters_t *config = peer->handshake_params;
@@ -937,8 +937,8 @@ dtls_update_parameters(dtls_context_t *ctx,
   data_length -= DTLS_RANDOM_LENGTH;
 
   /* Caution: SKIP_VAR_FIELD may jump to error: */
-  SKIP_VAR_FIELD(data, data_length, uint8);	/* skip session id */
-  SKIP_VAR_FIELD(data, data_length, uint8);	/* skip cookie */
+  SKIP_VAR_FIELD(data, data_length);	/* skip session id */
+  SKIP_VAR_FIELD(data, data_length);	/* skip cookie */
 
   i = dtls_uint16_to_int(data);
   if (data_length < i + sizeof(uint16_t)) {
@@ -975,7 +975,7 @@ dtls_update_parameters(dtls_context_t *ctx,
     goto error;
   }
 
-  if (data_length < sizeof(uint8)) { 
+  if (data_length < sizeof(uint8_t)) { 
     /* no compression specified, take the current compression method */
     if (security)
       config->compression = security->compression;
@@ -985,21 +985,21 @@ dtls_update_parameters(dtls_context_t *ctx,
   }
 
   i = dtls_uint8_to_int(data);
-  if (data_length < i + sizeof(uint8))
+  if (data_length < i + sizeof(uint8_t))
     goto error;
 
-  data += sizeof(uint8);
-  data_length -= sizeof(uint8) + i;
+  data += sizeof(uint8_t);
+  data_length -= sizeof(uint8_t) + i;
 
   ok = 0;
   while (i && !ok) {
-    for (j = 0; j < sizeof(compression_methods) / sizeof(uint8); ++j)
+    for (j = 0; j < sizeof(compression_methods) / sizeof(uint8_t); ++j)
       if (dtls_uint8_to_int(data) == compression_methods[j]) {
 	config->compression = compression_methods[j];
 	ok = 1;
       }
-    i -= sizeof(uint8);
-    data += sizeof(uint8);    
+    i -= sizeof(uint8_t);
+    data += sizeof(uint8_t);    
   }
 
   if (!ok) {
@@ -1023,7 +1023,7 @@ error:
 static inline int
 check_client_keyexchange(dtls_context_t *ctx, 
 			 dtls_handshake_parameters_t *handshake,
-			 uint8 *data, size_t length) {
+			 uint8_t *data, size_t length) {
 
 #ifdef DTLS_ECC
   if (is_tls_ecdhe_ecdsa_with_aes_128_ccm_8(handshake->cipher)) {
@@ -1038,13 +1038,13 @@ check_client_keyexchange(dtls_context_t *ctx,
       dtls_alert("expected 65 bytes long public point\n");
       return dtls_alert_fatal_create(DTLS_ALERT_HANDSHAKE_FAILURE);
     }
-    data += sizeof(uint8);
+    data += sizeof(uint8_t);
 
     if (dtls_uint8_to_int(data) != 4) {
       dtls_alert("expected uncompressed public point\n");
       return dtls_alert_fatal_create(DTLS_ALERT_HANDSHAKE_FAILURE);
     }
-    data += sizeof(uint8);
+    data += sizeof(uint8_t);
 
     memcpy(handshake->keyx.ecdsa.other_eph_pub_x, data,
 	   sizeof(handshake->keyx.ecdsa.other_eph_pub_x));
@@ -1086,7 +1086,7 @@ check_client_keyexchange(dtls_context_t *ctx,
 }
 
 static inline void
-update_hs_hash(dtls_peer_t *peer, uint8 *data, size_t length) {
+update_hs_hash(dtls_peer_t *peer, uint8_t *data, size_t length) {
   dtls_debug_dump("add MAC data", data, length);
   dtls_hash_update(&peer->handshake_params->hs_state.hs_hash, data, length);
 }
@@ -1098,7 +1098,7 @@ copy_hs_hash(dtls_peer_t *peer, dtls_hash_ctx *hs_hash) {
 }
 
 static inline size_t
-finalize_hs_hash(dtls_peer_t *peer, uint8 *buf) {
+finalize_hs_hash(dtls_peer_t *peer, uint8_t *buf) {
   return dtls_hash_finalize(buf, &peer->handshake_params->hs_state.hs_hash);
 }
 
@@ -1121,7 +1121,7 @@ clear_hs_hash(dtls_peer_t *peer) {
  */
 static int
 check_finished(dtls_context_t *ctx, dtls_peer_t *peer,
-	       uint8 *data, size_t data_length) {
+	       uint8_t *data, size_t data_length) {
   size_t digest_length, label_size;
   const unsigned char *label;
   unsigned char buf[DTLS_HMAC_MAX];
@@ -1198,10 +1198,10 @@ check_finished(dtls_context_t *ctx, dtls_peer_t *peer,
 static int
 dtls_prepare_record(dtls_peer_t *peer, dtls_security_parameters_t *security,
 		    unsigned char type,
-		    uint8 *data_array[], size_t data_len_array[],
+		    uint8_t *data_array[], size_t data_len_array[],
 		    size_t data_array_len,
-		    uint8 *sendbuf, size_t *rlen) {
-  uint8 *p, *start;
+		    uint8_t *sendbuf, size_t *rlen) {
+  uint8_t *p, *start;
   int res;
   unsigned int i;
   
@@ -1342,12 +1342,12 @@ static int
 dtls_send_handshake_msg_hash(dtls_context_t *ctx,
 			     dtls_peer_t *peer,
 			     session_t *session,
-			     uint8 header_type,
-			     uint8 *data, size_t data_length,
+			     uint8_t header_type,
+			     uint8_t *data, size_t data_length,
 			     int add_hash)
 {
-  uint8 buf[DTLS_HS_LENGTH];
-  uint8 *data_array[2];
+  uint8_t buf[DTLS_HS_LENGTH];
+  uint8_t *data_array[2];
   size_t data_len_array[2];
   int i = 0;
   dtls_security_parameters_t *security = peer ? dtls_security_params(peer) : NULL;
@@ -1379,8 +1379,8 @@ dtls_send_handshake_msg_hash(dtls_context_t *ctx,
 static int
 dtls_send_handshake_msg(dtls_context_t *ctx,
 			dtls_peer_t *peer,
-			uint8 header_type,
-			uint8 *data, size_t data_length)
+			uint8_t header_type,
+			uint8_t *data, size_t data_length)
 {
   return dtls_send_handshake_msg_hash(ctx, peer, &peer->session,
 				      header_type, data, data_length, 1);
@@ -1425,7 +1425,7 @@ dtls_send_handshake_msg(dtls_context_t *ctx,
 static int
 dtls_send_multi(dtls_context_t *ctx, dtls_peer_t *peer,
 		dtls_security_parameters_t *security , session_t *session,
-		unsigned char type, uint8 *buf_array[],
+		unsigned char type, uint8_t *buf_array[],
 		size_t buf_len_array[], size_t buf_array_len)
 {
   /* We cannot use ctx->sendbuf here as it is reserved for collecting
@@ -1550,12 +1550,12 @@ dtls_verify_peer(dtls_context_t *ctx,
 		 dtls_peer_t *peer, 
 		 session_t *session,
 		 const dtls_state_t state,
-		 uint8 *data, size_t data_length)
+		 uint8_t *data, size_t data_length)
 {
-  uint8 buf[DTLS_HV_LENGTH + DTLS_COOKIE_LENGTH];
-  uint8 *p = buf;
+  uint8_t buf[DTLS_HV_LENGTH + DTLS_COOKIE_LENGTH];
+  uint8_t *p = buf;
   int len = DTLS_COOKIE_LENGTH;
-  uint8 *cookie = NULL;
+  uint8_t *cookie = NULL;
   int err;
 #undef mycookie
 #define mycookie (buf + DTLS_HV_LENGTH)
@@ -1597,7 +1597,7 @@ dtls_verify_peer(dtls_context_t *ctx,
   p += sizeof(uint16_t);
 
   dtls_int_to_uint8(p, DTLS_COOKIE_LENGTH);
-  p += sizeof(uint8);
+  p += sizeof(uint8_t);
 
   assert(p == mycookie);
 
@@ -1620,26 +1620,26 @@ dtls_verify_peer(dtls_context_t *ctx,
 
 #ifdef DTLS_ECC
 static int
-dtls_check_ecdsa_signature_elem(uint8 *data, size_t data_length,
+dtls_check_ecdsa_signature_elem(uint8_t *data, size_t data_length,
 				unsigned char **result_r,
 				unsigned char **result_s)
 {
   int i;
-  uint8 *data_orig = data;
+  uint8_t *data_orig = data;
 
   if (dtls_uint8_to_int(data) != TLS_EXT_SIG_HASH_ALGO_SHA256) {
     dtls_alert("only sha256 is supported in certificate verify\n");
     return dtls_alert_fatal_create(DTLS_ALERT_HANDSHAKE_FAILURE);
   }
-  data += sizeof(uint8);
-  data_length -= sizeof(uint8);
+  data += sizeof(uint8_t);
+  data_length -= sizeof(uint8_t);
 
   if (dtls_uint8_to_int(data) != TLS_EXT_SIG_HASH_ALGO_ECDSA) {
     dtls_alert("only ecdsa signature is supported in client verify\n");
     return dtls_alert_fatal_create(DTLS_ALERT_HANDSHAKE_FAILURE);
   }
-  data += sizeof(uint8);
-  data_length -= sizeof(uint8);
+  data += sizeof(uint8_t);
+  data_length -= sizeof(uint8_t);
 
   if (data_length < dtls_uint16_to_int(data)) {
     dtls_alert("signature length wrong\n");
@@ -1652,26 +1652,26 @@ dtls_check_ecdsa_signature_elem(uint8 *data, size_t data_length,
     dtls_alert("wrong ASN.1 struct, expected SEQUENCE\n");
     return dtls_alert_fatal_create(DTLS_ALERT_DECODE_ERROR);
   }
-  data += sizeof(uint8);
-  data_length -= sizeof(uint8);
+  data += sizeof(uint8_t);
+  data_length -= sizeof(uint8_t);
 
   if (data_length < dtls_uint8_to_int(data)) {
     dtls_alert("signature length wrong\n");
     return dtls_alert_fatal_create(DTLS_ALERT_DECODE_ERROR);
   }
-  data += sizeof(uint8);
-  data_length -= sizeof(uint8);
+  data += sizeof(uint8_t);
+  data_length -= sizeof(uint8_t);
 
   if (dtls_uint8_to_int(data) != 0x02) {
     dtls_alert("wrong ASN.1 struct, expected Integer\n");
     return dtls_alert_fatal_create(DTLS_ALERT_DECODE_ERROR);
   }
-  data += sizeof(uint8);
-  data_length -= sizeof(uint8);
+  data += sizeof(uint8_t);
+  data_length -= sizeof(uint8_t);
 
   i = dtls_uint8_to_int(data);
-  data += sizeof(uint8);
-  data_length -= sizeof(uint8);
+  data += sizeof(uint8_t);
+  data_length -= sizeof(uint8_t);
 
   /* Sometimes these values have a leeding 0 byte */
   *result_r = data + i - DTLS_EC_KEY_SIZE;
@@ -1683,12 +1683,12 @@ dtls_check_ecdsa_signature_elem(uint8 *data, size_t data_length,
     dtls_alert("wrong ASN.1 struct, expected Integer\n");
     return dtls_alert_fatal_create(DTLS_ALERT_DECODE_ERROR);
   }
-  data += sizeof(uint8);
-  data_length -= sizeof(uint8);
+  data += sizeof(uint8_t);
+  data_length -= sizeof(uint8_t);
 
   i = dtls_uint8_to_int(data);
-  data += sizeof(uint8);
-  data_length -= sizeof(uint8);
+  data += sizeof(uint8_t);
+  data_length -= sizeof(uint8_t);
 
   /* Sometimes these values have a leeding 0 byte */
   *result_s = data + i - DTLS_EC_KEY_SIZE;
@@ -1702,7 +1702,7 @@ dtls_check_ecdsa_signature_elem(uint8 *data, size_t data_length,
 static int
 check_client_certificate_verify(dtls_context_t *ctx, 
 				dtls_peer_t *peer,
-				uint8 *data, size_t data_length)
+				uint8_t *data, size_t data_length)
 {
   dtls_handshake_parameters_t *config = peer->handshake_params;
   int ret;
@@ -1750,10 +1750,10 @@ dtls_send_server_hello(dtls_context_t *ctx, dtls_peer_t *peer)
   /* Ensure that the largest message to create fits in our source
    * buffer. (The size of the destination buffer is checked by the
    * encoding function, so we do not need to guess.) */
-  uint8 buf[DTLS_SH_LENGTH + 2 + 5 + 5 + 8 + 6];
-  uint8 *p;
+  uint8_t buf[DTLS_SH_LENGTH + 2 + 5 + 5 + 8 + 6];
+  uint8_t *p;
   int ecdsa;
-  uint8 extension_size;
+  uint8_t extension_size;
   dtls_handshake_parameters_t *handshake = peer->handshake_params;
   dtls_tick_t now;
 
@@ -1804,7 +1804,7 @@ dtls_send_server_hello(dtls_context_t *ctx, dtls_peer_t *peer)
     p += sizeof(uint16_t);
 
     dtls_int_to_uint8(p, TLS_CERT_TYPE_RAW_PUBLIC_KEY);
-    p += sizeof(uint8);
+    p += sizeof(uint8_t);
 
     /* client certificate type extension */
     dtls_int_to_uint16(p, TLS_EXT_SERVER_CERTIFICATE_TYPE);
@@ -1815,7 +1815,7 @@ dtls_send_server_hello(dtls_context_t *ctx, dtls_peer_t *peer)
     p += sizeof(uint16_t);
 
     dtls_int_to_uint8(p, TLS_CERT_TYPE_RAW_PUBLIC_KEY);
-    p += sizeof(uint8);
+    p += sizeof(uint8_t);
 
     /* ec_point_formats */
     dtls_int_to_uint16(p, TLS_EXT_EC_POINT_FORMATS);
@@ -1827,10 +1827,10 @@ dtls_send_server_hello(dtls_context_t *ctx, dtls_peer_t *peer)
 
     /* number of supported formats */
     dtls_int_to_uint8(p, 1);
-    p += sizeof(uint8);
+    p += sizeof(uint8_t);
 
     dtls_int_to_uint8(p, TLS_EXT_EC_POINT_FORMATS_UNCOMPRESSED);
-    p += sizeof(uint8);
+    p += sizeof(uint8_t);
   }
 
   assert(p - buf <= sizeof(buf));
@@ -1848,8 +1848,8 @@ static int
 dtls_send_certificate_ecdsa(dtls_context_t *ctx, dtls_peer_t *peer,
 			    const dtls_ecdsa_key_t *key)
 {
-  uint8 buf[DTLS_CE_LENGTH];
-  uint8 *p;
+  uint8_t buf[DTLS_CE_LENGTH];
+  uint8_t *p;
 
   /* Certificate 
    *
@@ -1875,8 +1875,8 @@ dtls_send_certificate_ecdsa(dtls_context_t *ctx, dtls_peer_t *peer,
 				 buf, p - buf);
 }
 
-static uint8 *
-dtls_add_ecdsa_signature_elem(uint8 *p, uint32_t *point_r, uint32_t *point_s)
+static uint8_t *
+dtls_add_ecdsa_signature_elem(uint8_t *p, uint32_t *point_r, uint32_t *point_s)
 {
   int len_r;
   int len_s;
@@ -1892,11 +1892,11 @@ dtls_add_ecdsa_signature_elem(uint8 *p, uint32_t *point_r, uint32_t *point_s)
 
   /* sha256 */
   dtls_int_to_uint8(p, TLS_EXT_SIG_HASH_ALGO_SHA256);
-  p += sizeof(uint8);
+  p += sizeof(uint8_t);
 
   /* ecdsa */
   dtls_int_to_uint8(p, TLS_EXT_SIG_HASH_ALGO_ECDSA);
-  p += sizeof(uint8);
+  p += sizeof(uint8_t);
 
   /* length of signature */
   dtls_int_to_uint16(p, len_r + len_s + 2 + 2 + 2);
@@ -1904,27 +1904,27 @@ dtls_add_ecdsa_signature_elem(uint8 *p, uint32_t *point_r, uint32_t *point_s)
 
   /* ASN.1 SEQUENCE */
   dtls_int_to_uint8(p, 0x30);
-  p += sizeof(uint8);
+  p += sizeof(uint8_t);
 
   dtls_int_to_uint8(p, len_r + len_s + 2 + 2);
-  p += sizeof(uint8);
+  p += sizeof(uint8_t);
 
   /* ASN.1 Integer r */
   dtls_int_to_uint8(p, 0x02);
-  p += sizeof(uint8);
+  p += sizeof(uint8_t);
 
   dtls_int_to_uint8(p, len_r);
-  p += sizeof(uint8);
+  p += sizeof(uint8_t);
 
   /* the pint r was added here */
   p += len_r;
 
   /* ASN.1 Integer s */
   dtls_int_to_uint8(p, 0x02);
-  p += sizeof(uint8);
+  p += sizeof(uint8_t);
 
   dtls_int_to_uint8(p, len_s);
-  p += sizeof(uint8);
+  p += sizeof(uint8_t);
 
   /* the pint s was added here */
   p += len_s;
@@ -1938,11 +1938,11 @@ dtls_send_server_key_exchange_ecdh(dtls_context_t *ctx, dtls_peer_t *peer,
 {
   /* The ASN.1 Integer representation of an 32 byte unsigned int could be
    * 33 bytes long add space for that */
-  uint8 buf[DTLS_SKEXEC_LENGTH + 2];
-  uint8 *p;
-  uint8 *key_params;
-  uint8 *ephemeral_pub_x;
-  uint8 *ephemeral_pub_y;
+  uint8_t buf[DTLS_SKEXEC_LENGTH + 2];
+  uint8_t *p;
+  uint8_t *key_params;
+  uint8_t *ephemeral_pub_x;
+  uint8_t *ephemeral_pub_y;
   uint32_t point_r[9];
   uint32_t point_s[9];
   dtls_handshake_parameters_t *config = peer->handshake_params;
@@ -1955,18 +1955,18 @@ dtls_send_server_key_exchange_ecdh(dtls_context_t *ctx, dtls_peer_t *peer,
   key_params = p;
   /* ECCurveType curve_type: named_curve */
   dtls_int_to_uint8(p, 3);
-  p += sizeof(uint8);
+  p += sizeof(uint8_t);
 
   /* NamedCurve namedcurve: secp256r1 */
   dtls_int_to_uint16(p, TLS_EXT_ELLIPTIC_CURVES_SECP256R1);
   p += sizeof(uint16_t);
 
   dtls_int_to_uint8(p, 1 + 2 * DTLS_EC_KEY_SIZE);
-  p += sizeof(uint8);
+  p += sizeof(uint8_t);
 
   /* This should be an uncompressed point, but I do not have access to the spec. */
   dtls_int_to_uint8(p, 4);
-  p += sizeof(uint8);
+  p += sizeof(uint8_t);
 
   /* store the pointer to the x component of the pub key and make space */
   ephemeral_pub_x = p;
@@ -2001,8 +2001,8 @@ static int
 dtls_send_server_key_exchange_psk(dtls_context_t *ctx, dtls_peer_t *peer,
 				  const unsigned char *psk_hint, size_t len)
 {
-  uint8 buf[DTLS_SKEXECPSK_LENGTH_MAX];
-  uint8 *p;
+  uint8_t buf[DTLS_SKEXECPSK_LENGTH_MAX];
+  uint8_t *p;
 
   p = buf;
 
@@ -2030,8 +2030,8 @@ dtls_send_server_key_exchange_psk(dtls_context_t *ctx, dtls_peer_t *peer,
 static int
 dtls_send_server_certificate_request(dtls_context_t *ctx, dtls_peer_t *peer)
 {
-  uint8 buf[8];
-  uint8 *p;
+  uint8_t buf[8];
+  uint8_t *p;
 
   /* ServerHelloDone 
    *
@@ -2040,11 +2040,11 @@ dtls_send_server_certificate_request(dtls_context_t *ctx, dtls_peer_t *peer)
 
   /* certificate_types */
   dtls_int_to_uint8(p, 1);
-  p += sizeof(uint8);
+  p += sizeof(uint8_t);
 
   /* ecdsa_sign */
   dtls_int_to_uint8(p, TLS_CLIENT_CERTIFICATE_TYPE_ECDSA_SIGN);
-  p += sizeof(uint8);
+  p += sizeof(uint8_t);
 
   /* supported_signature_algorithms */
   dtls_int_to_uint16(p, 2);
@@ -2052,11 +2052,11 @@ dtls_send_server_certificate_request(dtls_context_t *ctx, dtls_peer_t *peer)
 
   /* sha256 */
   dtls_int_to_uint8(p, TLS_EXT_SIG_HASH_ALGO_SHA256);
-  p += sizeof(uint8);
+  p += sizeof(uint8_t);
 
   /* ecdsa */
   dtls_int_to_uint8(p, TLS_EXT_SIG_HASH_ALGO_ECDSA);
-  p += sizeof(uint8);
+  p += sizeof(uint8_t);
 
   /* certificate_authoritiess */
   dtls_int_to_uint16(p, 0);
@@ -2166,7 +2166,7 @@ dtls_send_server_hello_msgs(dtls_context_t *ctx, dtls_peer_t *peer)
 
 static inline int 
 dtls_send_ccs(dtls_context_t *ctx, dtls_peer_t *peer) {
-  uint8 buf[1] = {1};
+  uint8_t buf[1] = {1};
 
   return dtls_send(ctx, peer, DTLS_CT_CHANGE_CIPHER_SPEC, buf, 1);
 }
@@ -2175,8 +2175,8 @@ dtls_send_ccs(dtls_context_t *ctx, dtls_peer_t *peer) {
 static int
 dtls_send_client_key_exchange(dtls_context_t *ctx, dtls_peer_t *peer)
 {
-  uint8 buf[DTLS_CKXEC_LENGTH];
-  uint8 *p;
+  uint8_t buf[DTLS_CKXEC_LENGTH];
+  uint8_t *p;
   dtls_handshake_parameters_t *handshake = peer->handshake_params;
 
   p = buf;
@@ -2215,15 +2215,15 @@ dtls_send_client_key_exchange(dtls_context_t *ctx, dtls_peer_t *peer)
 #endif /* DTLS_PSK */
 #ifdef DTLS_ECC
   case TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8: {
-    uint8 *ephemeral_pub_x;
-    uint8 *ephemeral_pub_y;
+    uint8_t *ephemeral_pub_x;
+    uint8_t *ephemeral_pub_y;
 
     dtls_int_to_uint8(p, 1 + 2 * DTLS_EC_KEY_SIZE);
-    p += sizeof(uint8);
+    p += sizeof(uint8_t);
 
     /* This should be an uncompressed point, but I do not have access to the spec. */
     dtls_int_to_uint8(p, 4);
-    p += sizeof(uint8);
+    p += sizeof(uint8_t);
 
     ephemeral_pub_x = p;
     p += DTLS_EC_KEY_SIZE;
@@ -2255,8 +2255,8 @@ dtls_send_certificate_verify_ecdh(dtls_context_t *ctx, dtls_peer_t *peer,
 {
   /* The ASN.1 Integer representation of an 32 byte unsigned int could be
    * 33 bytes long add space for that */
-  uint8 buf[DTLS_CV_LENGTH + 2];
-  uint8 *p;
+  uint8_t buf[DTLS_CV_LENGTH + 2];
+  uint8_t *p;
   uint32_t point_r[9];
   uint32_t point_s[9];
   dtls_hash_ctx hs_hash;
@@ -2290,10 +2290,10 @@ dtls_send_finished(dtls_context_t *ctx, dtls_peer_t *peer,
 		   const unsigned char *label, size_t labellen)
 {
   int length;
-  uint8 hash[DTLS_HMAC_MAX];
-  uint8 buf[DTLS_FIN_LENGTH];
+  uint8_t hash[DTLS_HMAC_MAX];
+  uint8_t buf[DTLS_FIN_LENGTH];
   dtls_hash_ctx hs_hash;
-  uint8 *p = buf;
+  uint8_t *p = buf;
 
   copy_hs_hash(peer, &hs_hash);
 
@@ -2318,9 +2318,9 @@ dtls_send_finished(dtls_context_t *ctx, dtls_peer_t *peer,
 
 static int
 dtls_send_client_hello(dtls_context_t *ctx, dtls_peer_t *peer,
-                       uint8 cookie[], size_t cookie_length) {
-  uint8 buf[DTLS_CH_LENGTH_MAX];
-  uint8 *p = buf;
+                       uint8_t cookie[], size_t cookie_length) {
+  uint8_t buf[DTLS_CH_LENGTH_MAX];
+  uint8_t *p = buf;
   uint8_t cipher_size;
   uint8_t extension_size;
   int psk;
@@ -2360,11 +2360,11 @@ dtls_send_client_hello(dtls_context_t *ctx, dtls_peer_t *peer,
 
   /* session id (length 0) */
   dtls_int_to_uint8(p, 0);
-  p += sizeof(uint8);
+  p += sizeof(uint8_t);
 
   /* cookie */
   dtls_int_to_uint8(p, cookie_length);
-  p += sizeof(uint8);
+  p += sizeof(uint8_t);
   if (cookie_length != 0) {
     memcpy(p, cookie, cookie_length);
     p += cookie_length;
@@ -2385,10 +2385,10 @@ dtls_send_client_hello(dtls_context_t *ctx, dtls_peer_t *peer,
 
   /* compression method */
   dtls_int_to_uint8(p, 1);
-  p += sizeof(uint8);
+  p += sizeof(uint8_t);
 
   dtls_int_to_uint8(p, TLS_COMPRESSION_NULL);
-  p += sizeof(uint8);
+  p += sizeof(uint8_t);
 
   if (extension_size) {
     /* length of the extensions */
@@ -2407,10 +2407,10 @@ dtls_send_client_hello(dtls_context_t *ctx, dtls_peer_t *peer,
 
     /* length of the list */
     dtls_int_to_uint8(p, 1);
-    p += sizeof(uint8);
+    p += sizeof(uint8_t);
 
     dtls_int_to_uint8(p, TLS_CERT_TYPE_RAW_PUBLIC_KEY);
-    p += sizeof(uint8);
+    p += sizeof(uint8_t);
 
     /* client certificate type extension */
     dtls_int_to_uint16(p, TLS_EXT_SERVER_CERTIFICATE_TYPE);
@@ -2422,10 +2422,10 @@ dtls_send_client_hello(dtls_context_t *ctx, dtls_peer_t *peer,
 
     /* length of the list */
     dtls_int_to_uint8(p, 1);
-    p += sizeof(uint8);
+    p += sizeof(uint8_t);
 
     dtls_int_to_uint8(p, TLS_CERT_TYPE_RAW_PUBLIC_KEY);
-    p += sizeof(uint8);
+    p += sizeof(uint8_t);
 
     /* elliptic_curves */
     dtls_int_to_uint16(p, TLS_EXT_ELLIPTIC_CURVES);
@@ -2452,10 +2452,10 @@ dtls_send_client_hello(dtls_context_t *ctx, dtls_peer_t *peer,
 
     /* number of supported formats */
     dtls_int_to_uint8(p, 1);
-    p += sizeof(uint8);
+    p += sizeof(uint8_t);
 
     dtls_int_to_uint8(p, TLS_EXT_EC_POINT_FORMATS_UNCOMPRESSED);
-    p += sizeof(uint8);
+    p += sizeof(uint8_t);
   }
 
   assert(p - buf <= sizeof(buf));
@@ -2471,7 +2471,7 @@ dtls_send_client_hello(dtls_context_t *ctx, dtls_peer_t *peer,
 static int
 check_server_hello(dtls_context_t *ctx, 
 		      dtls_peer_t *peer,
-		      uint8 *data, size_t data_length)
+		      uint8_t *data, size_t data_length)
 {
   dtls_handshake_parameters_t *handshake = peer->handshake_params;
 
@@ -2510,7 +2510,7 @@ check_server_hello(dtls_context_t *ctx,
   data += DTLS_RANDOM_LENGTH;
   data_length -= DTLS_RANDOM_LENGTH;
 
-  SKIP_VAR_FIELD(data, data_length, uint8); /* skip session id */
+  SKIP_VAR_FIELD(data, data_length); /* skip session id */
     
   /* Check cipher suite. As we offer all we have, it is sufficient
    * to check if the cipher suite selected by the server is in our
@@ -2529,8 +2529,8 @@ check_server_hello(dtls_context_t *ctx,
     dtls_alert("unsupported compression method 0x%02x\n", data[0]);
     return dtls_alert_fatal_create(DTLS_ALERT_INSUFFICIENT_SECURITY);
   }
-  data += sizeof(uint8);
-  data_length -= sizeof(uint8);
+  data += sizeof(uint8_t);
+  data_length -= sizeof(uint8_t);
 
   return dtls_check_tls_extension(peer, data, data_length, 0);
 
@@ -2541,7 +2541,7 @@ error:
 static int
 check_server_hello_verify_request(dtls_context_t *ctx,
 				  dtls_peer_t *peer,
-				  uint8 *data, size_t data_length)
+				  uint8_t *data, size_t data_length)
 {
   dtls_hello_verify_t *hv;
   int res;
@@ -2563,7 +2563,7 @@ check_server_hello_verify_request(dtls_context_t *ctx,
 static int
 check_server_certificate(dtls_context_t *ctx, 
 			 dtls_peer_t *peer,
-			 uint8 *data, size_t data_length)
+			 uint8_t *data, size_t data_length)
 {
   int err;
   dtls_handshake_parameters_t *config = peer->handshake_params;
@@ -2610,7 +2610,7 @@ check_server_certificate(dtls_context_t *ctx,
 static int
 check_server_key_exchange_ecdsa(dtls_context_t *ctx,
 				dtls_peer_t *peer,
-				uint8 *data, size_t data_length)
+				uint8_t *data, size_t data_length)
 {
   dtls_handshake_parameters_t *config = peer->handshake_params;
   int ret;
@@ -2634,8 +2634,8 @@ check_server_key_exchange_ecdsa(dtls_context_t *ctx,
     dtls_alert("Only named curves supported\n");
     return dtls_alert_fatal_create(DTLS_ALERT_HANDSHAKE_FAILURE);
   }
-  data += sizeof(uint8);
-  data_length -= sizeof(uint8);
+  data += sizeof(uint8_t);
+  data_length -= sizeof(uint8_t);
 
   if (dtls_uint16_to_int(data) != TLS_EXT_ELLIPTIC_CURVES_SECP256R1) {
     dtls_alert("secp256r1 supported\n");
@@ -2648,15 +2648,15 @@ check_server_key_exchange_ecdsa(dtls_context_t *ctx,
     dtls_alert("expected 65 bytes long public point\n");
     return dtls_alert_fatal_create(DTLS_ALERT_HANDSHAKE_FAILURE);
   }
-  data += sizeof(uint8);
-  data_length -= sizeof(uint8);
+  data += sizeof(uint8_t);
+  data_length -= sizeof(uint8_t);
 
   if (dtls_uint8_to_int(data) != 4) {
     dtls_alert("expected uncompressed public point\n");
     return dtls_alert_fatal_create(DTLS_ALERT_DECODE_ERROR);
   }
-  data += sizeof(uint8);
-  data_length -= sizeof(uint8);
+  data += sizeof(uint8_t);
+  data_length -= sizeof(uint8_t);
 
   memcpy(config->keyx.ecdsa.other_eph_pub_x, data, sizeof(config->keyx.ecdsa.other_eph_pub_y));
   data += sizeof(config->keyx.ecdsa.other_eph_pub_y);
@@ -2693,7 +2693,7 @@ check_server_key_exchange_ecdsa(dtls_context_t *ctx,
 static int
 check_server_key_exchange_psk(dtls_context_t *ctx,
 			      dtls_peer_t *peer,
-			      uint8 *data, size_t data_length)
+			      uint8_t *data, size_t data_length)
 {
   dtls_handshake_parameters_t *config = peer->handshake_params;
   uint16_t len;
@@ -2732,7 +2732,7 @@ check_server_key_exchange_psk(dtls_context_t *ctx,
 static int
 check_certificate_request(dtls_context_t *ctx, 
 			  dtls_peer_t *peer,
-			  uint8 *data, size_t data_length)
+			  uint8_t *data, size_t data_length)
 {
   unsigned int i;
   int auth_alg;
@@ -2751,18 +2751,18 @@ check_certificate_request(dtls_context_t *ctx,
   }
 
   i = dtls_uint8_to_int(data);
-  data += sizeof(uint8);
+  data += sizeof(uint8_t);
   if (i + 1 > data_length) {
     dtls_alert("the cerfificate types are too long\n");
     return dtls_alert_fatal_create(DTLS_ALERT_DECODE_ERROR);
   }
 
   auth_alg = 0;
-  for (; i > 0 ; i -= sizeof(uint8)) {
+  for (; i > 0 ; i -= sizeof(uint8_t)) {
     if (dtls_uint8_to_int(data) == TLS_CLIENT_CERTIFICATE_TYPE_ECDSA_SIGN
 	&& auth_alg == 0)
       auth_alg = dtls_uint8_to_int(data);
-    data += sizeof(uint8);
+    data += sizeof(uint8_t);
   }
 
   if (auth_alg != TLS_CLIENT_CERTIFICATE_TYPE_ECDSA_SIGN) {
@@ -2784,9 +2784,9 @@ check_certificate_request(dtls_context_t *ctx,
     int current_sig_alg;
 
     current_hash_alg = dtls_uint8_to_int(data);
-    data += sizeof(uint8);
+    data += sizeof(uint8_t);
     current_sig_alg = dtls_uint8_to_int(data);
-    data += sizeof(uint8);
+    data += sizeof(uint8_t);
 
     if (current_hash_alg == TLS_EXT_SIG_HASH_ALGO_SHA256 && hash_alg == 0 && 
         current_sig_alg == TLS_EXT_SIG_HASH_ALGO_ECDSA && sig_alg == 0) {
@@ -2810,7 +2810,7 @@ check_certificate_request(dtls_context_t *ctx,
 static int
 check_server_hellodone(dtls_context_t *ctx, 
 		      dtls_peer_t *peer,
-		      uint8 *data, size_t data_length)
+		      uint8_t *data, size_t data_length)
 {
   int res;
 #ifdef DTLS_ECC
@@ -2881,14 +2881,14 @@ check_server_hellodone(dtls_context_t *ctx,
 }
 
 static int
-decrypt_verify(dtls_peer_t *peer, uint8 *packet, size_t length,
-	       uint8 **cleartext)
+decrypt_verify(dtls_peer_t *peer, uint8_t *packet, size_t length,
+	       uint8_t **cleartext)
 {
   dtls_record_header_t *header = DTLS_RECORD_HEADER(packet);
   dtls_security_parameters_t *security = dtls_security_params_epoch(peer, dtls_get_epoch(header));
   int clen;
   
-  *cleartext = (uint8 *)packet + sizeof(dtls_record_header_t);
+  *cleartext = (uint8_t *)packet + sizeof(dtls_record_header_t);
   clen = length - sizeof(dtls_record_header_t);
 
   if (!security) {
@@ -2998,7 +2998,7 @@ dtls_renegotiate(dtls_context_t *ctx, const session_t *dst)
 static int
 handle_handshake_msg(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
 		 const dtls_peer_type role, const dtls_state_t state,
-		 uint8 *data, size_t data_length) {
+		 uint8_t *data, size_t data_length) {
 
   int err = 0;
 
@@ -3367,7 +3367,7 @@ handle_handshake_msg(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
 static int
 handle_handshake(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
 		 const dtls_peer_type role, const dtls_state_t state,
-		 uint8 *data, size_t data_length)
+		 uint8_t *data, size_t data_length)
 {
   dtls_handshake_header_t *hs_header;
   int res;
@@ -3476,7 +3476,7 @@ handle_handshake(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
 
 static int
 handle_ccs(dtls_context_t *ctx, dtls_peer_t *peer, 
-	   uint8 *record_header, uint8 *data, size_t data_length)
+	   uint8_t *record_header, uint8_t *data, size_t data_length)
 {
   int err;
   dtls_handshake_parameters_t *handshake = peer->handshake_params;
@@ -3515,7 +3515,7 @@ handle_ccs(dtls_context_t *ctx, dtls_peer_t *peer,
  */
 static int
 handle_alert(dtls_context_t *ctx, dtls_peer_t *peer, 
-	     uint8 *record_header, uint8 *data, size_t data_length) {
+	     uint8_t *record_header, uint8_t *data, size_t data_length) {
   int free_peer = 0;		/* indicates whether to free peer */
 
   if (data_length < 2)
@@ -3609,10 +3609,10 @@ static int dtls_alert_send_from_err(dtls_context_t *ctx, dtls_peer_t *peer,
 int
 dtls_handle_message(dtls_context_t *ctx, 
 		    session_t *session,
-		    uint8 *msg, int msglen) {
+		    uint8_t *msg, int msglen) {
   dtls_peer_t *peer = NULL;
   unsigned int rlen;		/* record length */
-  uint8 *data; 			/* (decrypted) payload */
+  uint8_t *data; 			/* (decrypted) payload */
   int data_length;		/* length of decrypted payload 
 				   (without MAC and padding) */
   int err;

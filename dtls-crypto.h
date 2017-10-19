@@ -67,11 +67,11 @@ typedef struct dtls_cipher_context_t {
 } dtls_cipher_context_t;
 
 typedef struct {
-  uint8 own_eph_priv[32];
-  uint8 other_eph_pub_x[32];
-  uint8 other_eph_pub_y[32];
-  uint8 other_pub_x[32];
-  uint8 other_pub_y[32];
+  uint8_t own_eph_priv[32];
+  uint8_t other_eph_pub_x[32];
+  uint8_t other_eph_pub_y[32];
+  uint8_t other_pub_x[32];
+  uint8_t other_pub_y[32];
 } dtls_handshake_parameters_ecdsa_t;
 
 /* This is the maximal supported length of the psk client identity and psk
@@ -99,7 +99,7 @@ typedef struct {
    * can be calculated using dtls_kb_size(). Use \c dtls_kb_ macros to
    * access the components of the key block.
    */
-  uint8 key_block[MAX_KEYBLOCK_LENGTH];
+  uint8_t key_block[MAX_KEYBLOCK_LENGTH];
 } dtls_security_parameters_t;
 
 struct netq_t;
@@ -107,11 +107,11 @@ struct netq_t;
 typedef struct {
   union {
     struct random_t {
-      uint8 client[DTLS_RANDOM_LENGTH];	/**< client random gmt and bytes */
-      uint8 server[DTLS_RANDOM_LENGTH];	/**< server random gmt and bytes */
+      uint8_t client[DTLS_RANDOM_LENGTH];	/**< client random gmt and bytes */
+      uint8_t server[DTLS_RANDOM_LENGTH];	/**< server random gmt and bytes */
     } random;
     /** the session's master secret */
-    uint8 master_secret[DTLS_MASTER_SECRET_LENGTH];
+    uint8_t master_secret[DTLS_MASTER_SECRET_LENGTH];
   } tmp;
   struct netq_t *reorder_queue;	/**< the packets to reorder */
   dtls_hs_state_t hs_state;  /**< handshake protocol status */

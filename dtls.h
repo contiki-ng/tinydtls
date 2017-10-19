@@ -82,7 +82,7 @@ typedef struct {
    *         error.
    */
   int (*write)(struct dtls_context_t *ctx, 
-	       session_t *session, uint8 *buf, size_t len);
+	       session_t *session, uint8_t *buf, size_t len);
 
   /** 
    * Called from dtls_handle_message() deliver application data that was 
@@ -97,7 +97,7 @@ typedef struct {
    * @return ignored
    */
   int (*read)(struct dtls_context_t *ctx, 
-	       session_t *session, uint8 *buf, size_t len);
+	       session_t *session, uint8_t *buf, size_t len);
 
   /**
    * The event handler is called when a message from the alert
@@ -294,7 +294,7 @@ int dtls_renegotiate(dtls_context_t *ctx, const session_t *dst);
  * @return The number of bytes written or @c -1 on error.
  */
 int dtls_write(struct dtls_context_t *ctx, session_t *session, 
-	       uint8 *buf, size_t len);
+	       uint8_t *buf, size_t len);
 
 /**
  * Checks sendqueue of given DTLS context object for any outstanding
@@ -376,7 +376,7 @@ typedef struct __attribute__((__packed__)) {
  * \param state The DTLS record state for the current session. 
  * \param 
  */
-int dtls_record_read(dtls_state_t *state, uint8 *msg, int msglen);
+int dtls_record_read(dtls_state_t *state, uint8_t *msg, int msglen);
 #endif
 
 /** 
@@ -389,7 +389,7 @@ int dtls_record_read(dtls_state_t *state, uint8 *msg, int msglen);
  * @return A value less than zero on error, zero on success.
  */
 int dtls_handle_message(dtls_context_t *ctx, session_t *session,
-			uint8 *msg, int msglen);
+			uint8_t *msg, int msglen);
 
 /**
  * Check if @p session is associated with a peer object in @p context.
