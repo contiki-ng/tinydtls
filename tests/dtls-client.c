@@ -169,7 +169,7 @@ verify_ecdsa_key(struct dtls_context_t *ctx,
 static void
 try_send(struct dtls_context_t *ctx, session_t *dst) {
   int res;
-  res = dtls_write(ctx, dst, (uint8 *)buf, len);
+  res = dtls_write(ctx, dst, (uint8_t *)buf, len);
   if (res >= 0) {
     memmove(buf, buf + res, len - res);
     len -= res;
@@ -184,7 +184,7 @@ handle_stdin() {
 
 static int
 read_from_peer(struct dtls_context_t *ctx, 
-	       session_t *session, uint8 *data, size_t len) {
+	       session_t *session, uint8_t *data, size_t len) {
   size_t i;
   for (i = 0; i < len; i++)
     printf("%c", data[i]);
@@ -193,7 +193,7 @@ read_from_peer(struct dtls_context_t *ctx,
 
 static int
 send_to_peer(struct dtls_context_t *ctx, 
-	     session_t *session, uint8 *data, size_t len) {
+	     session_t *session, uint8_t *data, size_t len) {
 
   int fd = *(int *)dtls_get_app_data(ctx);
   return sendto(fd, data, len, MSG_DONTWAIT,
@@ -205,7 +205,7 @@ dtls_handle_read(struct dtls_context_t *ctx) {
   int fd;
   session_t session;
 #define MAX_READ_BUF 2000
-  static uint8 buf[MAX_READ_BUF];
+  static uint8_t buf[MAX_READ_BUF];
   int len;
 
   fd = *(int *)dtls_get_app_data(ctx);
@@ -440,11 +440,15 @@ main(int argc, char **argv) {
   on = 1;
 #ifdef IPV6_RECVPKTINFO
   if (setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, &on, sizeof(on) ) < 0) {
-#else /* IPV6_RECVPKTINFO */
-  if (setsockopt(fd, IPPROTO_IPV6, IPV6_PKTINFO, &on, sizeof(on) ) < 0) {
-#endif /* IPV6_RECVPKTINFO */
     dtls_alert("setsockopt IPV6_PKTINFO: %s\n", strerror(errno));
   }
+#elifdef IPV6_PKTINFO
+  if (setsockopt(fd, IPPROTO_IPV6, IPV6_PKTINFO, &on, sizeof(on) ) < 0) {
+    dtls_alert("setsockopt IPV6_PKTINFO: %s\n", strerror(errno));
+  }
+#else
+  dtls_alert("setsockopt IPV6_PKTINFO not supported\n");
+#endif /* IPV6_RECVPKTINFO */
 
   if (signal(SIGINT, dtls_handle_signal) == SIG_ERR) {
     dtls_alert("An error occurred while setting a signal handler.\n");

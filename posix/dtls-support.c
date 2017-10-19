@@ -296,6 +296,19 @@ dtls_session_equals(const session_t *a, const session_t *b) {
   return 0;
 }
 
+void *
+dtls_session_get_address(const session_t *a)
+{
+  /* improve this to only contain the addressing info */
+  return (void *)a;
+}
+
+int
+dtls_session_get_address_size(const session_t *a)
+{
+  /* improve this to only contain the addressing info */
+  return sizeof(session_t);
+}
 
 /* The init */
 void

@@ -23,11 +23,9 @@ DTLS_SUPPORT ?= posix
 SOURCES = dtls.c dtls-crypto.c dtls-ccm.c dtls-hmac.c netq.c dtls-peer.c
 SOURCES+= dtls_debug.c
 SOURCES+= aes/rijndael.c ecc/ecc.c sha2/sha2.c $(DTLS_SUPPORT)/dtls-support.c
-DTLS_DIRS:= aes ecc sta2 $(DTLS_SUPPORT)
 OBJECTS:= $(SOURCES:.c=.o)
-# CFLAGS:=-Wall -pedantic -std=c99 -g -O2 -I. ${addprefix -I,$(DTLS_DIRS)}
-CFLAGS:=-Wall -std=c99 -g -O2 -I. ${addprefix -I,$(DTLS_DIRS)}
-CPPFLAGS:=
+# CFLAGS:=-Wall -pedantic -std=c99 -g -O2 -I. -I$(DTLS_SUPPORT)
+CFLAGS:=-Wall -std=c99 -g -O2 -I. -I$(DTLS_SUPPORT)
 LIB:=libtinydtls.a
 LDFLAGS:=
 ARFLAGS:=cru

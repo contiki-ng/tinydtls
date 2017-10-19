@@ -125,7 +125,7 @@ verify_ecdsa_key(struct dtls_context_t *ctx,
 
 static int
 read_from_peer(struct dtls_context_t *ctx, 
-	       session_t *session, uint8 *data, size_t len) {
+	       session_t *session, uint8_t *data, size_t len) {
   size_t i;
   for (i = 0; i < len; i++)
     printf("%c", data[i]);
@@ -146,7 +146,7 @@ read_from_peer(struct dtls_context_t *ctx,
 
 static int
 send_to_peer(struct dtls_context_t *ctx, 
-	     session_t *session, uint8 *data, size_t len) {
+	     session_t *session, uint8_t *data, size_t len) {
 
   int fd = *(int *)dtls_get_app_data(ctx);
   return sendto(fd, data, len, MSG_DONTWAIT,
@@ -157,7 +157,7 @@ static int
 dtls_handle_read(struct dtls_context_t *ctx) {
   int *fd;
   session_t session;
-  static uint8 buf[DTLS_MAX_BUF];
+  static uint8_t buf[DTLS_MAX_BUF];
   int len;
 
   fd = dtls_get_app_data(ctx);
