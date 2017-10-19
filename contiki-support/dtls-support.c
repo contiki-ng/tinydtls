@@ -206,6 +206,17 @@ dtls_get_random(unsigned long *result)
   return 0;
 }
 
+int
+dtls_fill_random(unsigned char *buf, size_t len) {
+  int i;
+  if(buf) {
+    for(i = 0; i < len; i++) {
+      buf[i] = random_rand() & 0xff;
+    }
+    return 1;
+  }
+  return 0;
+}
 
 static void dtls_retransmit_callback(void *ptr);
 

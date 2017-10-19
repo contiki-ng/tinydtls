@@ -34,7 +34,6 @@
 #include "dtls.h"
 
 #include "dtls-alert.h"
-#include "dtls-prng.h"
 
 #include "dtls-support.h"
 
@@ -1772,7 +1771,7 @@ dtls_send_server_hello(dtls_context_t *ctx, dtls_peer_t *peer)
    * followed by 28 bytes of generate random data. */
   dtls_ticks(&now);
   dtls_int_to_uint32(handshake->tmp.random.server, now / DTLS_TICKS_PER_SECOND);
-  dtls_prng(handshake->tmp.random.server + 4, 28);
+  dtls_fill_random(handshake->tmp.random.server + 4, 28);
 
   memcpy(p, handshake->tmp.random.server, DTLS_RANDOM_LENGTH);
   p += DTLS_RANDOM_LENGTH;
@@ -2351,7 +2350,7 @@ dtls_send_client_hello(dtls_context_t *ctx, dtls_peer_t *peer,
      * followed by 28 bytes of generate random data. */
     dtls_ticks(&now);
     dtls_int_to_uint32(handshake->tmp.random.client, now / DTLS_TICKS_PER_SECOND);
-    dtls_prng(handshake->tmp.random.client + sizeof(uint32_t),
+    dtls_fill_random(handshake->tmp.random.client + sizeof(uint32_t),
          DTLS_RANDOM_LENGTH - sizeof(uint32_t));
   }
   /* we must use the same Client Random as for the previous request */
@@ -3780,8 +3779,6 @@ dtls_new_context(void *app_data) {
 
   dtls_ticks(&now);
 
-  dtls_prng_init(rand);
-
   c = malloc_context();
   if (!c)
     goto error;
@@ -3789,7 +3786,7 @@ dtls_new_context(void *app_data) {
   memset(c, 0, sizeof(dtls_context_t));
   c->app = app_data;
 
-  if (dtls_prng(c->cookie_secret, DTLS_COOKIE_SECRET_LENGTH))
+  if (dtls_fill_random(c->cookie_secret, DTLS_COOKIE_SECRET_LENGTH))
     c->cookie_secret_age = now;
   else 
     goto error;

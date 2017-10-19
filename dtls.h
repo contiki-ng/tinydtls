@@ -81,10 +81,10 @@ typedef struct {
    *         that were sent, or a value less than zero to indicate an 
    *         error.
    */
-  int (*write)(struct dtls_context_t *ctx, 
+  int (*write)(struct dtls_context_t *ctx,
 	       session_t *session, uint8_t *buf, size_t len);
 
-  /** 
+  /**
    * Called from dtls_handle_message() deliver application data that was 
    * received on the given session. The data is delivered only after
    * decryption and verification have succeeded. 

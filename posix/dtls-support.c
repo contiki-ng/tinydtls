@@ -247,6 +247,16 @@ dtls_get_random(unsigned long *rand)
   return 1;
 }
 
+int
+dtls_fill_random(unsigned char *buf, size_t len) {
+  unsigned long r;
+  while (len--) {
+    dtls_get_random(&r);
+    *buf++ = r & 0xFF;
+  }
+  return 1;
+}
+
 void
 dtls_set_retransmit_timer(dtls_context_t *ctx, unsigned int timeout)
 {

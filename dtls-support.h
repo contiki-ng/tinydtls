@@ -10,6 +10,7 @@
 dtls_context_t *malloc_context(void);
 void free_context(dtls_context_t *context);
 int dtls_get_random(unsigned long *rand);
+int dtls_fill_random(uint8_t *buffer, size_t len);
 void dtls_set_retransmit_timer(dtls_context_t *context, unsigned int);
 void dtls_support_init(void);
 
