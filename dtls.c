@@ -3771,11 +3771,6 @@ dtls_context_t *
 dtls_new_context(void *app_data) {
   dtls_context_t *c;
   dtls_tick_t now;
-  unsigned long rand;
-
-  if (!dtls_get_random(&rand)) {
-    return NULL;
-  }
 
   dtls_ticks(&now);
 

@@ -189,25 +189,9 @@ dtls_ticks(dtls_tick_t *t)
   *t = clock_time();
 }
 
-
 int
-dtls_get_random(unsigned long *result)
+dtls_fill_random(uint8_t *buf, size_t len)
 {
-  uint8_t *ptr;
-  int i;
-  ptr = (uint8_t *)result;
-
-  if(ptr) {
-    for(i = 0; i < sizeof(unsigned long); i++) {
-      ptr[i] = random_rand() & 0xff;
-    }
-    return 1;
-  }
-  return 0;
-}
-
-int
-dtls_fill_random(unsigned char *buf, size_t len) {
   int i;
   if(buf) {
     for(i = 0; i < len; i++) {
