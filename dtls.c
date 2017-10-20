@@ -151,7 +151,6 @@ dtls_init() {
   dtls_hmac_storage_init();
   netq_init();
   dtls_peer_init();
-  dtls_hmac_storage_init();
 }
 
 /* Calls cb_alert() with given arguments if defined, otherwise an
