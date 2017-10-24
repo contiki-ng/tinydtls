@@ -442,7 +442,7 @@ main(int argc, char **argv) {
   if (setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, &on, sizeof(on) ) < 0) {
     dtls_alert("setsockopt IPV6_PKTINFO: %s\n", strerror(errno));
   }
-#elifdef IPV6_PKTINFO
+#elif defined IPV6_PKTINFO
   if (setsockopt(fd, IPPROTO_IPV6, IPV6_PKTINFO, &on, sizeof(on) ) < 0) {
     dtls_alert("setsockopt IPV6_PKTINFO: %s\n", strerror(errno));
   }
