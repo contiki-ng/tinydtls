@@ -82,12 +82,14 @@ memb_free(struct memb *m, void *ptr)
 
 
 dtls_context_t *
-malloc_context() {
+dtls_context_acquire(void)
+{
   return (dtls_context_t *)malloc(sizeof(dtls_context_t));
 }
 
 void
-free_context(dtls_context_t *context) {
+dtls_context_release(dtls_context_t *context)
+{
   free(context);
 }
 

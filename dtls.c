@@ -3773,9 +3773,10 @@ dtls_new_context(void *app_data) {
 
   dtls_ticks(&now);
 
-  c = malloc_context();
-  if (!c)
+  c = dtls_context_acquire();
+  if (!c) {
     goto error;
+  }
 
   memset(c, 0, sizeof(dtls_context_t));
   c->app = app_data;
@@ -3818,7 +3819,7 @@ dtls_free_context(dtls_context_t *ctx) {
     }
   }
 
-  free_context(ctx);
+  dtls_context_release(ctx);
 }
 
 int

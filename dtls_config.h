@@ -52,7 +52,9 @@
 /* #undef HAVE_STDDEF_H */
 
 /* Define to 1 if you have the <stdint.h> header file. */
+#ifndef HAVE_STDINT_H
 #define HAVE_STDINT_H 1
+#endif /* HAVE_STDINT_H */
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 /* #undef HAVE_STDLIB_H */

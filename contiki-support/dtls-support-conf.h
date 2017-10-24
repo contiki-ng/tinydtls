@@ -12,10 +12,8 @@ typedef struct {
 #define DTLS_SUPPORT_CONF_CONTEXT_STATE dtls_support_context_state_t
 
 typedef struct {
-  unsigned char size;
   uip_ipaddr_t addr;
   uint16_t port;
-  int ifindex;
 } session_t;
 
 #define DTLS_TICKS_PER_SECOND CLOCK_SECOND
