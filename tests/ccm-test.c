@@ -13,11 +13,10 @@
 #include <strings.h>
 #endif
 
-#ifdef WITH_CONTIKI
+#ifdef CONTIKI
 #include "contiki.h"
-#include "contiki-lib.h"
 #include "contiki-net.h"
-#endif /* WITH_CONTIKI */
+#endif /* CONTIKI */
 
 #ifndef HAVE_FLS
 int fls(unsigned int i) {
@@ -41,7 +40,7 @@ dump(unsigned char *buf, size_t len) {
   printf("\n");
 }
 
-#ifdef WITH_CONTIKI
+#ifdef CONTIKI
 PROCESS(ccm_test_process, "CCM test process");
 AUTOSTART_PROCESSES(&ccm_test_process);
 PROCESS_THREAD(ccm_test_process, ev, d)
@@ -54,9 +53,9 @@ int main(int argc, char **argv) {
 
   rijndael_ctx ctx;
 
-#ifdef WITH_CONTIKI
+#ifdef CONTIKI
   PROCESS_BEGIN();
-#endif /* WITH_CONTIKI */
+#endif /* CONTIKI */
 
   for (n = 0; n < sizeof(data)/sizeof(struct test_vector); ++n) {
 
@@ -90,9 +89,9 @@ int main(int argc, char **argv) {
       printf("\t*** MAC verified (total length = %lu) ***\n", len + data[n].la);
   }
 
-#ifdef WITH_CONTIKI
+#ifdef CONTIKI
   PROCESS_END();
-#else /* WITH_CONTIKI */
+#else /* CONTIKI */
   return 0;
-#endif /* WITH_CONTIKI */
+#endif /* CONTIKI */
 }

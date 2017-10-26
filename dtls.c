@@ -24,9 +24,6 @@
 #ifdef HAVE_ASSERT_H
 #include <assert.h>
 #endif
-#ifndef WITH_CONTIKI
-#include <stdlib.h>
-#endif /* WITH_CONTIKI */
 
 #include "dtls_debug.h"
 #include "dtls-numeric.h"
@@ -3537,13 +3534,13 @@ handle_alert(dtls_context_t *ctx, dtls_peer_t *peer,
 
     delete_peer(&ctx->peers, peer);
 
-#ifdef WITH_CONTIKI
+#ifdef CONTIKI
 #if DEBUG && ! defined(NDEBUG)
     PRINTF("removed peer ");
     dtls_session_print(&peer->session);
     PRINTF("\n");
 #endif /* DEBUG && ! defined(NDEBUG) */
-#endif /* WITH_CONTIKI */
+#endif /* CONTIKI */
 
     free_peer = 1;
 

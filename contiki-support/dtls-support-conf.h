@@ -20,8 +20,6 @@ typedef struct {
 
 typedef clock_time_t dtls_tick_t;
 
-#define WITH_CONTIKI 1
-
 #define HAVE_ASSERT_H 1
 
 #endif /* DTLS_SUPPORT_CONF_H_ */

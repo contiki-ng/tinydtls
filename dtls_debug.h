@@ -22,16 +22,15 @@
 
 #include "tinydtls.h"
 
-#ifdef WITH_CONTIKI
+#ifdef CONTIKI
 # ifndef DEBUG
 #  define DEBUG DEBUG_FULL
 # endif /* DEBUG */
-#include "net/ip/uip-debug.h"
-
-#else /* WITH_CONTKI */
-#ifndef PRINTF
-#define PRINTF(...)
-#endif /* PRINTF */
+# include "net/ipv6/uip-debug.h"
+#else /* CONTKI */
+# ifndef PRINTF
+#  define PRINTF(...)
+# endif /* PRINTF */
 #endif
 
 /** Pre-defined log levels akin to what is used in \b syslog. */

@@ -1,4 +1,4 @@
-CONTENTS 
+CONTENTS
 
 This library contains functions and structures that can help
 constructing a single-threaded UDP server with DTLS support in
@@ -9,14 +9,9 @@ C99. The following components are available:
 
 * tests
   The subdirectory tests contains test programs that show how each
-  component is used. 
+  component is used.
 
 BUILDING
 
 When using the code from the git repository, invoke make to build DTLS as a
 shared library.
-
-To add tinydtls to Contiki, drop it inside Contiki source code
-tree as lib/tinydtls add the following line to your Makefile:
-
-  MODULES += lib/tinydtls ${addprefix lib/tinydtls/,aes sha2 ecc contiki-support}

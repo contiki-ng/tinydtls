@@ -6,7 +6,7 @@
  * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
  *
  * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
- * and the Eclipse Distribution License is available at 
+ * and the Eclipse Distribution License is available at
  * http://www.eclipse.org/org/documents/edl-v10.php.
  *
  * Contributors:
@@ -18,7 +18,7 @@
 
 /**
  * @file dtls.h
- * @brief High level DTLS API and visible structures. 
+ * @brief High level DTLS API and visible structures.
  */
 
 #ifndef _DTLS_DTLS_H_
@@ -414,7 +414,7 @@ void dtls_reset_peer(dtls_context_t *context, dtls_peer_t *peer);
 #endif /* _DTLS_DTLS_H_ */
 
 /**
- * @mainpage 
+ * @mainpage
  *
  * @author Olaf Bergmann, TZI Uni Bremen
  *
@@ -425,311 +425,20 @@ void dtls_reset_peer(dtls_context_t *context, dtls_peer_t *peer);
  *
  * @section license License
  *
- * This software is under the <a 
+ * This software is under the <a
  * href="http://www.opensource.org/licenses/mit-license.php">MIT License</a>.
- * 
+ *
  * @subsection sha256 Aaron D. Gifford's SHA256 Implementation
  *
- * tinyDTLS provides HMAC-SHA256 with BSD-licensed code from Aaron D. Gifford, 
+ * tinyDTLS provides HMAC-SHA256 with BSD-licensed code from Aaron D. Gifford,
  * see <a href="http://www.aarongifford.com/">www.aarongifford.com</a>.
  *
  * @subsection aes Rijndael Implementation From OpenBSD
  *
- * The AES implementation is taken from rijndael.{c,h} contained in the crypto 
+ * The AES implementation is taken from rijndael.{c,h} contained in the crypto
  * sub-system of the OpenBSD operating system. It is copyright by Vincent Rijmen, *
- * Antoon Bosselaers and Paulo Barreto. See <a 
- * href="http://www.openbsd.org/cgi-bin/cvsweb/src/sys/crypto/rijndael.c">rijndael.c</a> 
+ * Antoon Bosselaers and Paulo Barreto. See <a
+ * href="http://www.openbsd.org/cgi-bin/cvsweb/src/sys/crypto/rijndael.c">rijndael.c</a>
  * for License info.
  *
- * @section download Getting the Files
- *
- * You can get the sources either from the <a 
- * href="http://sourceforge.net/projects/tinydtls/files">downloads</a> section or 
- * through git from the <a 
- * href="http://sourceforge.net/projects/tinydtls/develop">project develop page</a>.
- *
- * @section config Configuration
- *
- * Use @c configure to set up everything for a successful build. For Contiki, use the
- * option @c --with-contiki.
- *
- * @section build Building
- *
- * After configuration, just type 
- * @code
-make
- * @endcode
- * optionally followed by
- * @code
-make install
- * @endcode
- * The Contiki version is integrated with the Contiki build system, hence you do not
- * need to invoke @c make explicitely. Just add @c tinydtls to the variable @c APPS
- * in your @c Makefile.
- *
- * @addtogroup dtls_usage DTLS Usage
- *
- * @section dtls_server_example DTLS Server Example
- *
- * This section shows how to use the DTLS library functions to setup a 
- * simple secure UDP echo server. The application is responsible for the
- * entire network communication and thus will look like a usual UDP
- * server with socket creation and binding and a typical select-loop as
- * shown below. The minimum configuration required for DTLS is the 
- * creation of the dtls_context_t using dtls_new_context(), and a callback
- * for sending data. Received packets are read by the application and
- * passed to dtls_handle_message() as shown in @ref dtls_read_cb. 
- * For any useful communication to happen, read and write call backs 
- * and a key management function should be registered as well. 
- * 
- * @code 
- dtls_context_t *the_context = NULL;
- int fd, result;
-
- static const dtls_handler_t cb = {
-   .write = send_to_peer,
-   .read  = read_from_peer,
-   .event = NULL,
-   .get_psk_key = get_psk_key
- };
-
- fd = socket(...);
- if (fd < 0 || bind(fd, ...) < 0)
-   exit(-1);
-
- the_context = dtls_new_context(&fd);
- dtls_set_handler(the_context, &cb);
-
- while (1) {
-   ...initialize fd_set rfds and timeout ...
-   result = select(fd+1, &rfds, NULL, 0, NULL);
-    
-   if (FD_ISSET(fd, &rfds))
-     dtls_handle_read(the_context);
- }
-
- dtls_free_context(the_context);
- * @endcode
- * 
- * @subsection dtls_read_cb The Read Callback
- *
- * The DTLS library expects received raw data to be passed to
- * dtls_handle_message(). The application is responsible for
- * filling a session_t structure with the address data of the
- * remote peer as illustrated by the following example:
- * 
- * @code
-int dtls_handle_read(struct dtls_context_t *ctx) {
-  int *fd;
-  session_t session;
-  static uint8 buf[DTLS_MAX_BUF];
-  int len;
-
-  fd = dtls_get_app_data(ctx);
-
-  assert(fd);
-
-  session.size = sizeof(session.addr);
-  len = recvfrom(*fd, buf, sizeof(buf), 0, &session.addr.sa, &session.size);
-  
-  return len < 0 ? len : dtls_handle_message(ctx, &session, buf, len);
-}    
- * @endcode 
- * 
- * Once a new DTLS session was established and DTLS ApplicationData has been
- * received, the DTLS server invokes the read callback with the MAC-verified 
- * cleartext data as its argument. A read callback for a simple echo server
- * could look like this:
- * @code
-int read_from_peer(struct dtls_context_t *ctx, session_t *session, uint8 *data, size_t len) {
-  return dtls_write(ctx, session, data, len);
-}
- * @endcode 
- * 
- * @subsection dtls_send_cb The Send Callback
- * 
- * The callback function send_to_peer() is called whenever data must be
- * sent over the network. Here, the sendto() system call is used to
- * transmit data within the given session. The socket descriptor required
- * by sendto() has been registered as application data when the DTLS context
- * was created with dtls_new_context().
- * Note that it is on the application to buffer the data when it cannot be
- * sent at the time this callback is invoked. The following example thus
- * is incomplete as it would have to deal with EAGAIN somehow.
- * @code
-int send_to_peer(struct dtls_context_t *ctx, session_t *session, uint8 *data, size_t len) {
-  int fd = *(int *)dtls_get_app_data(ctx);
-  return sendto(fd, data, len, MSG_DONTWAIT, &session->addr.sa, session->size);
-}
- * @endcode
- * 
- * @subsection dtls_get_psk_info The Key Storage
- *
- * When a new DTLS session is created, the library must ask the application
- * for keying material. To do so, it invokes the registered call-back function
- * get_psk_info() with the current context and session information as parameter.
- * When the call-back function is invoked with the parameter @p type set to 
- * @c DTLS_PSK_IDENTITY, the result parameter @p result must be filled with
- * the psk_identity_hint in case of a server, or the actual psk_identity in 
- * case of a client. When @p type is @c DTLS_PSK_KEY, the result parameter
- * must be filled with a key for the given identity @p id. The function must
- * return the number of bytes written to @p result which must not exceed
- * @p result_length.
- * In case of an error, the function must return a negative value that 
- * corresponds to a valid error code defined in dtls-alert.h.
- * 
- * @code
-int get_psk_info(struct dtls_context_t *ctx UNUSED_PARAM,
-	    const session_t *session UNUSED_PARAM,
-	    dtls_credentials_type_t type,
-	    const unsigned char *id, size_t id_len,
-	    unsigned char *result, size_t result_length) {
-
-  switch (type) {
-  case DTLS_PSK_IDENTITY:
-    if (result_length < psk_id_length) {
-      dtls_warn("cannot set psk_identity -- buffer too small\n");
-      return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
-    }
-
-    memcpy(result, psk_id, psk_id_length);
-    return psk_id_length;
-  case DTLS_PSK_KEY:
-    if (id_len != psk_id_length || memcmp(psk_id, id, id_len) != 0) {
-      dtls_warn("PSK for unknown id requested, exiting\n");
-      return dtls_alert_fatal_create(DTLS_ALERT_ILLEGAL_PARAMETER);
-    } else if (result_length < psk_key_length) {
-      dtls_warn("cannot set psk -- buffer too small\n");
-      return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
-    }
-
-    memcpy(result, psk_key, psk_key_length);
-    return psk_key_length;
-  default:
-    dtls_warn("unsupported request type: %d\n", type);
-  }
-
-  return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
-}
- * @endcode
- * 
- * @subsection dtls_events The Event Notifier
- *
- * Applications that want to be notified whenever the status of a DTLS session
- * has changed can register an event handling function with the field @c event
- * in the dtls_handler_t structure (see \ref dtls_server_example). The call-back
- * function is called for alert messages and internal state changes. For alert
- * messages, the argument @p level will be set to a value greater than zero, and
- * @p code will indicate the notification code. For internal events, @p level
- * is @c 0, and @p code a value greater than @c 255. 
- *
- * Internal events are DTLS_EVENT_CONNECTED, @c DTLS_EVENT_CONNECT, and
- * @c DTLS_EVENT_RENEGOTIATE.
- *
- * @code
-int handle_event(struct dtls_context_t *ctx, session_t *session, 
-                 dtls_alert_level_t level, unsigned short code) {
-  ... do something with event ...
-  return 0;
-}
- * @endcode
- *
- * @section dtls_client_example DTLS Client Example
- *
- * A DTLS client is constructed like a server but needs to actively setup
- * a new session by calling dtls_connect() at some point. As this function
- * usually returns before the new DTLS channel is established, the application
- * must register an event handler and wait for @c DTLS_EVENT_CONNECT before
- * it can send data over the DTLS channel.
- *
- */
-
-/**
- * @addtogroup contiki Contiki
- *
- * To use tinyDTLS as Contiki application, place the source code in the directory 
- * @c apps/tinydtls in the Contiki source tree and invoke configure with the option
- * @c --with-contiki. This will define WITH_CONTIKI in tinydtls.h and include 
- * @c Makefile.contiki in the main Makefile. To cross-compile for another platform
- * you will need to set your host and build system accordingly. For example,
- * when configuring for ARM, you would invoke
- * @code
-./configure --with-contiki --build=x86_64-linux-gnu --host=arm-none-eabi 
- * @endcode
- * on an x86_64 linux host.
- *
- * Then, create a Contiki project with @c APPS += tinydtls in its Makefile. A sample
- * server could look like this (with read_from_peer() and get_psk_key() as shown above).
- *
- * @code
-#include "contiki.h"
-
-#include "tinydtls.h"
-#include "dtls.h"
-
-#define UIP_IP_BUF   ((struct uip_ip_hdr *)&uip_buf[UIP_LLH_LEN])
-#define UIP_UDP_BUF  ((struct uip_udp_hdr *)&uip_buf[UIP_LLIPH_LEN])
-
-int send_to_peer(struct dtls_context_t *, session_t *, uint8 *, size_t);
-
-static struct uip_udp_conn *server_conn;
-static dtls_context_t *dtls_context;
-
-static const dtls_handler_t cb = {
-  .write = send_to_peer,
-  .read  = read_from_peer,
-  .event = NULL,
-  .get_psk_key = get_psk_key
-};
-
-PROCESS(server_process, "DTLS server process");
-AUTOSTART_PROCESSES(&server_process);
-
-PROCESS_THREAD(server_process, ev, data)
-{
-  PROCESS_BEGIN();
-
-  dtls_init();
-
-  server_conn = udp_new(NULL, 0, NULL);
-  udp_bind(server_conn, UIP_HTONS(5684));
-
-  dtls_context = dtls_new_context(server_conn);
-  if (!dtls_context) {
-    dtls_emerg("cannot create context\n");
-    PROCESS_EXIT();
-  }
-
-  dtls_set_handler(dtls_context, &cb);
-
-  while(1) {
-    PROCESS_WAIT_EVENT();
-    if(ev == tcpip_event && uip_newdata()) {
-      session_t session;
-
-      uip_ipaddr_copy(&session.addr, &UIP_IP_BUF->srcipaddr);
-      session.port = UIP_UDP_BUF->srcport;
-      session.size = sizeof(session.addr) + sizeof(session.port);
-    
-      dtls_handle_message(ctx, &session, uip_appdata, uip_datalen());
-    }
-  }
-
-  PROCESS_END();
-}
-
-int send_to_peer(struct dtls_context_t *ctx, session_t *session, uint8 *data, size_t len) {
-  struct uip_udp_conn *conn = (struct uip_udp_conn *)dtls_get_app_data(ctx);
-
-  uip_ipaddr_copy(&conn->ripaddr, &session->addr);
-  conn->rport = session->port;
-
-  uip_udp_packet_send(conn, data, len);
-
-  memset(&conn->ripaddr, 0, sizeof(server_conn->ripaddr));
-  memset(&conn->rport, 0, sizeof(conn->rport));
-
-  return len;
-}
- * @endcode
  */
