@@ -304,9 +304,9 @@ int dtls_write(struct dtls_context_t *ctx, session_t *session,
  * @param next    If not NULL, @p next is filled with the timestamp
  *  of the next scheduled retransmission, or @c 0 when no packets are
  *  waiting.
+ * @param all     if all retransmissions or a single retransmission should be performed
  */
-void dtls_check_retransmit(dtls_context_t *context, dtls_tick_t *next,
-                           int all);
+void dtls_check_retransmit(dtls_context_t *context, dtls_tick_t *next, int all);
 
 #define DTLS_COOKIE_LENGTH 16
 
@@ -414,8 +414,6 @@ void dtls_reset_peer(dtls_context_t *context, dtls_peer_t *peer);
 #endif /* _DTLS_DTLS_H_ */
 
 /**
- * @mainpage
- *
  * @author Olaf Bergmann, TZI Uni Bremen
  *
  * This library provides a very simple datagram server with DTLS

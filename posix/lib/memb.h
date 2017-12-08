@@ -33,24 +33,13 @@
  */
 
 /**
- * \addtogroup mem
- * @{
- */
-
-
-/**
- * \defgroup memb Memory block management functions
- *
  * The memory block allocation routines provide a simple yet powerful
  * set of functions for managing a set of memory blocks of fixed
  * size. A set of memory blocks is statically declared with the
  * MEMB() macro. Memory blocks are allocated from the declared
  * memory by the memb_alloc() function, and are deallocated with the
  * memb_free() function.
- *
- * @{
  */
-
 
 /**
  * \file
@@ -118,8 +107,5 @@ void *memb_alloc(struct memb *m);
  * point to a legal memory block.
  */
 char  memb_free(struct memb *m, void *ptr);
-
-/** @} */
-/** @} */
 
 #endif /* MEMB_H_ */
