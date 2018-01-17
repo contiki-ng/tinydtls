@@ -4,8 +4,8 @@
 #include "tinydtls.h"
 #include "lib/memb.h"
 #include "dtls-support.h"
-#include "dtls_debug.h"
 #include <stdlib.h>
+#include <time.h>
 #include <sys/time.h>
 #ifdef HAVE_ASSERT_H
 #include <assert.h>
@@ -21,29 +21,32 @@ static dtls_cipher_context_t cipher_context;
 #define LOCK(P) pthread_mutex_lock(P)
 #define UNLOCK(P) pthread_mutex_unlock(P)
 
-extern char *loglevels[];
+/* Log configuration */
+#define LOG_MODULE "dtls-support"
+#define LOG_LEVEL  LOG_LEVEL_DTLS
+#include "dtls-log.h"
 
-/**
- * A length-safe strlen() fake.
- *
- * @param s      The string to count characters != 0.
- * @param maxlen The maximum length of @p s.
- *
- * @return The length of @p s.
- */
-static inline size_t
-dtls_strnlen(const char *s, size_t maxlen) {
-  size_t n = 0;
-  while(*s++ && n < maxlen)
-    ++n;
-  return n;
-}
+#ifndef MAX
+#define MAX(a,b) (((a) < (b)) ? (b) : (a))
+#endif /* MAX */
 
-static inline size_t
-print_timestamp(char *s, size_t len, time_t t) {
-  struct tm *tmp;
-  tmp = localtime(&t);
-  return strftime(s, len, "%b %d %H:%M:%S", tmp);
+void
+dtls_support_log_prefix(int level, const char *level_str, const char *module)
+{
+  struct timeval now;
+  struct tm loctime;
+  int n = 0;
+  char buf[28];
+
+  if((gettimeofday(&now, 0) == 0) &&
+     (localtime_r(&now.tv_sec, &loctime) != NULL) &&
+     (n = strftime(buf, sizeof(buf), "%F %T", &loctime)) > 0) {
+    buf[n] = '\0';
+    LOG_OUTPUT("%s.%03u [%s] %-4s - ", buf, (unsigned)(now.tv_usec / 1000),
+               module, level_str);
+  } else {
+    LOG_OUTPUT("- [%s] %s - ", module, level_str);
+  }
 }
 
 dtls_cipher_context_t *
@@ -93,127 +96,6 @@ dtls_context_release(dtls_context_t *context)
   free(context);
 }
 
-#ifndef NDEBUG
-size_t
-dsrv_print_addr(const session_t *addr, char *buf, size_t len) {
-  const void *addrptr = NULL;
-  in_port_t port;
-  char *p = buf;
-
-  switch (addr->addr.sa.sa_family) {
-  case AF_INET:
-    if (len < INET_ADDRSTRLEN)
-      return 0;
-
-    addrptr = &addr->addr.sin.sin_addr;
-    port = ntohs(addr->addr.sin.sin_port);
-    break;
-  case AF_INET6:
-    if (len < INET6_ADDRSTRLEN + 2)
-      return 0;
-
-    *p++ = '[';
-
-    addrptr = &addr->addr.sin6.sin6_addr;
-    port = ntohs(addr->addr.sin6.sin6_port);
-
-    break;
-  default:
-    memcpy(buf, "(unknown address type)", min(22, len));
-    return min(22, len);
-  }
-
-  if (inet_ntop(addr->addr.sa.sa_family, addrptr, p, len) == 0) {
-    perror("dsrv_print_addr");
-    return 0;
-  }
-
-  p += dtls_strnlen(p, len);
-
-  if (addr->addr.sa.sa_family == AF_INET6) {
-    if (p < buf + len) {
-      *p++ = ']';
-    } else
-      return 0;
-  }
-
-  p += snprintf(p, buf + len - p + 1, ":%d", port);
-
-  return p - buf;
-}
-
-#endif /* NDEBUG */
-
-#ifdef HAVE_VPRINTF
-void
-dsrv_log(log_t level, char *format, ...)
-{
-  static char timebuf[32];
-  va_list ap;
-  FILE *log_fd;
-
-  if (dtls_get_log_level() < level)
-    return;
-
-  log_fd = level <= DTLS_LOG_CRIT ? stderr : stdout;
-
-  if (print_timestamp(timebuf,sizeof(timebuf), time(NULL)))
-    fprintf(log_fd, "%s ", timebuf);
-
-  if (level <= DTLS_LOG_DEBUG)
-    fprintf(log_fd, "%s ", loglevels[level]);
-
-  va_start(ap, format);
-  vfprintf(log_fd, format, ap);
-  va_end(ap);
-  fflush(log_fd);
-}
-#endif /* HAVE_VPRINTF */
-
-void
-dtls_dsrv_hexdump_log(log_t level, const char *name, const unsigned char *buf, size_t length, int extend) {
-  static char timebuf[32];
-  FILE *log_fd;
-  int n = 0;
-
-  if (dtls_get_log_level() < level)
-    return;
-
-  log_fd = level <= DTLS_LOG_CRIT ? stderr : stdout;
-
-  if (print_timestamp(timebuf, sizeof(timebuf), time(NULL)))
-    fprintf(log_fd, "%s ", timebuf);
-
-  if (level <= DTLS_LOG_DEBUG)
-    fprintf(log_fd, "%s ", loglevels[level]);
-
-  if (extend) {
-    fprintf(log_fd, "%s: (%zu bytes):\n", name, length);
-
-    while (length--) {
-      if (n % 16 == 0)
-	fprintf(log_fd, "%08X ", n);
-
-      fprintf(log_fd, "%02X ", *buf++);
-
-      n++;
-      if (n % 8 == 0) {
-	if (n % 16 == 0)
-	  fprintf(log_fd, "\n");
-	else
-	  fprintf(log_fd, " ");
-      }
-    }
-  } else {
-    fprintf(log_fd, "%s: (%zu bytes): ", name, length);
-    while (length--)
-      fprintf(log_fd, "%02X", *buf++);
-  }
-  fprintf(log_fd, "\n");
-
-  fflush(log_fd);
-}
-
 /* --------- time support ----------- */
 
 static time_t dtls_clock_offset;
@@ -251,7 +133,7 @@ dtls_fill_random(uint8_t *buf, size_t len)
 void
 dtls_set_retransmit_timer(dtls_context_t *ctx, unsigned int timeout)
 {
-/* Do nothing for now ... */
+  /* Do nothing for now ... */
 }
 
 /* Implementation of session functions */
@@ -266,9 +148,11 @@ int
 dtls_session_equals(const session_t *a, const session_t *b) {
   assert(a); assert(b);
 
-  if (a->ifindex != b->ifindex ||
-      a->size != b->size || a->addr.sa.sa_family != b->addr.sa.sa_family)
+  if(a->ifindex != b->ifindex ||
+     a->size != b->size ||
+     a->addr.sa.sa_family != b->addr.sa.sa_family) {
     return 0;
+  }
 
   /* need to compare only relevant parts of sockaddr_in6 */
   switch (a->addr.sa.sa_family) {
@@ -299,6 +183,74 @@ dtls_session_get_address_size(const session_t *a)
 {
   /* improve this to only contain the addressing info */
   return sizeof(session_t);
+}
+
+void
+dtls_session_log(const session_t *addr)
+{
+  char buf[MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
+  const void *addrptr = NULL;
+  in_port_t port;
+
+  switch(addr->addr.sa.sa_family) {
+  case AF_INET:
+    addrptr = &addr->addr.sin.sin_addr;
+    port = ntohs(addr->addr.sin.sin_port);
+    break;
+  case AF_INET6:
+    addrptr = &addr->addr.sin6.sin6_addr;
+    port = ntohs(addr->addr.sin6.sin6_port);
+    break;
+  default:
+    LOG_OUTPUT("(unknown address type)");
+    return;
+  }
+
+  if(inet_ntop(addr->addr.sa.sa_family, addrptr, buf, sizeof(buf)) == 0) {
+    perror("dtls_session_log");
+    return;
+  }
+
+
+  if(addr->addr.sa.sa_family == AF_INET6) {
+    LOG_OUTPUT("[%s]:%d", buf, port);
+  } else {
+    LOG_OUTPUT("%s:%d", buf, port);
+  }
+}
+
+void
+dtls_session_print(const session_t *addr)
+{
+  char buf[MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
+  const void *addrptr = NULL;
+  in_port_t port;
+
+  switch(addr->addr.sa.sa_family) {
+  case AF_INET:
+    addrptr = &addr->addr.sin.sin_addr;
+    port = ntohs(addr->addr.sin.sin_port);
+    break;
+  case AF_INET6:
+    addrptr = &addr->addr.sin6.sin6_addr;
+    port = ntohs(addr->addr.sin6.sin6_port);
+    break;
+  default:
+    printf("(unknown address type)");
+    return;
+  }
+
+  if(inet_ntop(addr->addr.sa.sa_family, addrptr, buf, sizeof(buf)) == 0) {
+    perror("dtls_session_log");
+    return;
+  }
+
+
+  if(addr->addr.sa.sa_family == AF_INET6) {
+    printf("[%s]:%d", buf, port);
+  } else {
+    printf("%s:%d", buf, port);
+  }
 }
 
 /* The init */

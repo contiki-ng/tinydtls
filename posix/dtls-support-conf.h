@@ -21,4 +21,9 @@ typedef struct {
 
 typedef uint64_t dtls_tick_t;
 
+#define LOG_CONF_OUTPUT_PREFIX(level, level_str, module) \
+  dtls_support_log_prefix(level, level_str, module)
+
+void dtls_support_log_prefix(int level, const char *level_str, const char *module);
+
 #endif /* DTLS_SUPPORT_CONF_H_ */

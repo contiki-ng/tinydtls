@@ -1,8 +1,12 @@
 #include <stdio.h>
 
 #include "tinydtls.h"
-#include "dtls_debug.h"
 #include "dtls-crypto.h"
+
+/* Log configuration */
+#define LOG_MODULE "prf-test"
+#define LOG_LEVEL  LOG_LEVEL_DTLS
+#include "dtls-log.h"
 
 int 
 main() {
@@ -24,7 +28,7 @@ main() {
 		    buf, 100);
 
   printf("PRF yields %zu bytes of random data:\n", result);
-  hexdump(buf, result);
+  dtls_log_hexdump(buf, result);
   printf("\n");
   return 0;
 }

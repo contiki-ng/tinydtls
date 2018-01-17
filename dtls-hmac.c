@@ -27,9 +27,13 @@
 #define assert(x)
 #endif
 
-#include "dtls_debug.h"
 #include "dtls-hmac.h"
 #include "lib/memb.h"
+
+/* Log configuration */
+#define LOG_MODULE "dtls-hmac"
+#define LOG_LEVEL  LOG_LEVEL_DTLS
+#include "dtls-log.h"
 
 MEMB(hmac_context_storage, dtls_hmac_context_t, DTLS_HASH_MAX);
 

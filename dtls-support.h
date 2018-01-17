@@ -47,9 +47,9 @@ int dtls_session_get_address_size(const session_t *a);
 void dtls_session_print(const session_t *a);
 
 /**
- * sn-print the session info
+ * log the session info
  */
-void dtls_session_snprint(const session_t *a, char *buf, size_t size);
+void dtls_session_log(const session_t *a);
 
 /**
  * Clock handling

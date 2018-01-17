@@ -21,7 +21,7 @@ DTLS_SUPPORT ?= posix
 
 # files and flags
 SOURCES = dtls.c dtls-crypto.c dtls-ccm.c dtls-hmac.c netq.c dtls-peer.c
-SOURCES+= dtls_debug.c
+SOURCES+= dtls-log.c
 SOURCES+= aes/rijndael.c ecc/ecc.c sha2/sha2.c $(DTLS_SUPPORT)/dtls-support.c
 OBJECTS:= $(SOURCES:.c=.o)
 # CFLAGS:=-Wall -pedantic -std=c99 -g -O2 -I. -I$(DTLS_SUPPORT)

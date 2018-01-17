@@ -25,7 +25,6 @@
 #include <assert.h>
 #endif
 
-#include "dtls_debug.h"
 #include "dtls-numeric.h"
 #include "netq.h"
 #include "dtls.h"
@@ -37,6 +36,11 @@
 #ifdef WITH_SHA256
 #  include "sha2/sha2.h"
 #endif
+
+/* Log configuration */
+#define LOG_MODULE "dtls"
+#define LOG_LEVEL  LOG_LEVEL_DTLS
+#include "dtls-log.h"
 
 #define dtls_set_version(H,V) dtls_int_to_uint16((H)->version, (V))
 #define dtls_set_content_type(H,V) ((H)->content_type = (V) & 0xff)
@@ -1519,7 +1523,9 @@ static void dtls_destroy_peer(dtls_context_t *ctx, dtls_peer_t *peer, int unlink
     dtls_close(ctx, &peer->session);
   if (unlink) {
     delete_peer(&ctx->peers, peer);
-    dtls_dsrv_log_addr(DTLS_LOG_DEBUG, "removed peer", &peer->session);
+    LOG_DBG("removed peer: ");
+    LOG_DBG_DTLS_ADDR(&peer->session);
+    LOG_DBG_("\n");
   }
   dtls_free_peer(peer);
 }
@@ -2570,8 +2576,8 @@ check_server_certificate(dtls_context_t *ctx,
   data += DTLS_HS_LENGTH;
 
   if (dtls_uint24_to_int(data) != DTLS_EC_SUBJECTPUBLICKEY_SIZE) {
-    dtls_alert("expect length of %d bytes for certificate\n",
-	       DTLS_EC_SUBJECTPUBLICKEY_SIZE);
+    dtls_alert("expect length of %lu bytes for certificate\n",
+	       (unsigned long)DTLS_EC_SUBJECTPUBLICKEY_SIZE);
     return dtls_alert_fatal_create(DTLS_ALERT_DECODE_ERROR);
   }
   data += 3; /* 24 bits */
@@ -3617,7 +3623,9 @@ dtls_handle_message(dtls_context_t *ctx,
 
   if (!peer) {
     dtls_debug("dtls_handle_message: PEER NOT FOUND\n");
-    dtls_dsrv_log_addr(DTLS_LOG_DEBUG, "peer addr", session);
+    LOG_DBG("peer addr: ");
+    LOG_DBG_DTLS_ADDR(session);
+    LOG_DBG_("\n");
   } else {
     dtls_debug("dtls_handle_message: FOUND PEER\n");
   }

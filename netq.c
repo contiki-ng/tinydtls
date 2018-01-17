@@ -16,7 +16,6 @@
  *******************************************************************************/
 
 #include "tinydtls.h"
-#include "dtls_debug.h"
 #include "netq.h"
 
 #ifdef HAVE_ASSERT_H
@@ -29,6 +28,12 @@
 #endif
 
 #include "lib/memb.h"
+
+/* Log configuration */
+#define LOG_MODULE "netq"
+#define LOG_LEVEL  LOG_LEVEL_DTLS
+#include "dtls-log.h"
+
 MEMB(netq_storage, netq_t, NETQ_MAXCNT);
 
 static inline netq_t *
@@ -131,13 +136,13 @@ netq_node_new(size_t size) {
   netq_t *node;
   node = netq_malloc_node(size);
 
-#ifndef NDEBUG
-  if (!node)
-    dtls_warn("netq_node_new: malloc\n");
-#endif
+  if (!node) {
+    LOG_WARN("netq_node_new: malloc\n");
+  }
 
-  if (node)
+  if (node) {
     memset(node, 0, sizeof(netq_t));
+  }
 
   return node;
 }

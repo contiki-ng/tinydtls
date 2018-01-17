@@ -16,7 +16,11 @@
 
 #include "tinydtls.h" 
 #include "dtls.h" 
-#include "dtls_debug.h"
+
+/* Log configuration */
+#define LOG_MODULE "dtls-server"
+#define LOG_LEVEL  LOG_LEVEL_DTLS
+#include "dtls-log.h"
 
 #define DEFAULT_PORT 20220
 
@@ -176,7 +180,7 @@ dtls_handle_read(struct dtls_context_t *ctx) {
     dtls_debug("got %d bytes from port %d\n", len, 
 	     ntohs(session.addr.sin6.sin6_port));
     if (sizeof(buf) < len) {
-      dtls_warn("packet was truncated (%d bytes lost)\n", len - sizeof(buf));
+      dtls_warn("packet was truncated (%d bytes lost)\n", (int)(len - sizeof(buf)));
     }
   }
 
@@ -257,7 +261,6 @@ static dtls_handler_t cb = {
 int 
 main(int argc, char **argv) {
   dtls_context_t *the_context = NULL;
-  log_t log_level = DTLS_LOG_WARN;
   fd_set rfds, wfds;
   struct timeval timeout;
   int fd, opt, result;
@@ -275,7 +278,7 @@ main(int argc, char **argv) {
   listen_addr.sin6_port = htons(DEFAULT_PORT);
   listen_addr.sin6_addr = in6addr_any;
 
-  while ((opt = getopt(argc, argv, "A:p:v:")) != -1) {
+  while ((opt = getopt(argc, argv, "A:p:")) != -1) {
     switch (opt) {
     case 'A' :
       if (resolve_address(optarg, (struct sockaddr *)&listen_addr) < 0) {
@@ -286,16 +289,11 @@ main(int argc, char **argv) {
     case 'p' :
       listen_addr.sin6_port = htons(atoi(optarg));
       break;
-    case 'v' :
-      log_level = strtol(optarg, NULL, 10);
-      break;
     default:
       usage(argv[0], dtls_package_version());
       exit(1);
     }
   }
-
-  dtls_set_log_level(log_level);
 
   /* init socket and set it to non-blocking */
   fd = socket(listen_addr.sin6_family, SOCK_DGRAM, 0);

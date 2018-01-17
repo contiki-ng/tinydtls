@@ -25,7 +25,6 @@
 #define assert(x)
 #endif
 
-#include "dtls_debug.h"
 #include "dtls-numeric.h"
 #include "dtls.h"
 #include "dtls-crypto.h"
@@ -33,6 +32,11 @@
 #include "ecc/ecc.h"
 #include "netq.h"
 #include "lib/memb.h"
+
+/* Log configuration */
+#define LOG_MODULE "dtls-crypto"
+#define LOG_LEVEL  LOG_LEVEL_DTLS
+#include "dtls-log.h"
 
 #define HMAC_UPDATE_SEED(Context,Seed,Length)		\
   if (Seed) dtls_hmac_update(Context, (Seed), (Length))

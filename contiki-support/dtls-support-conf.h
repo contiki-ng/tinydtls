@@ -5,6 +5,11 @@
 #include "sys/ctimer.h"
 #include <stdint.h>
 
+/* Use same log level as CoAP as default */
+#define LOG_LEVEL_DTLS LOG_LEVEL_COAP
+
+#define DTLS_LOG_CONF_PATH "sys/log.h"
+
 typedef struct {
   struct ctimer retransmit_timer;
 } dtls_support_context_state_t;

@@ -17,8 +17,12 @@
 
 #include "tinydtls.h"
 #include "dtls-peer.h"
-#include "dtls_debug.h"
 #include "lib/memb.h"
+
+/* Log configuration */
+#define LOG_MODULE "dtls-peer"
+#define LOG_LEVEL  LOG_LEVEL_DTLS
+#include "dtls-log.h"
 
 MEMB(peer_storage, dtls_peer_t, DTLS_PEER_MAX);
 
@@ -56,7 +60,9 @@ dtls_new_peer(const session_t *session) {
       return NULL;
     }
 
-    dtls_dsrv_log_addr(DTLS_LOG_DEBUG, "dtls_new_peer", session);
+    LOG_DBG("dtls_new_peer: ");
+    LOG_DBG_DTLS_ADDR(session);
+    LOG_DBG_("\n");
   }
 
   return peer;

@@ -1,9 +1,11 @@
 #include "dtls-support.h"
 #include "lib/random.h"
-#include <stdarg.h>
+#include "net/ipv6/uiplib.h"
 
-#define DEBUG DEBUG_NONE
-#include "dtls_debug.h"
+/* Log configuration */
+#define LOG_MODULE "dtls-support"
+#define LOG_LEVEL  LOG_LEVEL_DTLS
+#include "dtls-log.h"
 
 static dtls_context_t the_dtls_context;
 static dtls_cipher_context_t cipher_context;
@@ -66,99 +68,19 @@ dtls_session_get_address_size(const session_t *a)
 }
 /*---------------------------------------------------------------------------*/
 void
-dtls_session_print(const session_t *a)
+dtls_session_log(const session_t *addr)
+{
+  LOG_OUTPUT("[");
+  log_6addr(&a->addr);
+  LOG_OUTPUT("]");
+}
+/*---------------------------------------------------------------------------*/
+void
+dtls_session_print(const session_t *addr)
 {
   printf("[");
-  if(a) {
-    uip_debug_ipaddr_print(&a->addr);
-    printf("]:%u", a->port);
-  } else {
-    printf("NULL]");
-  }
-}
-/*---------------------------------------------------------------------------*/
-size_t
-dsrv_print_addr(const session_t *addr, char *buf, size_t len)
-{
-  if(len > 1) {
-    /* TODO print IP address and port */
-    buf[0] = '[';
-    buf[1] = ']';
-    return 2;
-  }
-  return 0;
-}
-/*---------------------------------------------------------------------------*/
-extern char *loglevels[];
-static inline size_t
-print_timestamp(log_t level)
-{
-  dtls_tick_t now;
-  dtls_ticks(&now);
-  if(level <= DTLS_LOG_DEBUG) {
-    printf("%s ", loglevels[level]);
-  }
-  return printf("%5lu ", (unsigned long)now);
-}
-/*---------------------------------------------------------------------------*/
-#ifdef HAVE_VPRINTF
-void
-dsrv_log(log_t level, char *format, ...)
-{
-  va_list ap;
-
-  if(dtls_get_log_level() < level) {
-    return;
-  }
-
-  print_timestamp(level);
-
-  if(level <= DTLS_LOG_DEBUG) {
-    PRINTF("%s ", loglevels[level]);
-  }
-
-  va_start(ap, format);
-  vprintf(format, ap);
-  va_end(ap);
-}
-#endif /* HAVE_VPRINTF */
-/*---------------------------------------------------------------------------*/
-void
-dtls_dsrv_hexdump_log(log_t level, const char *name, const unsigned char *buf, size_t length, int extend) {
-  int n = 0;
-
-  if(dtls_get_log_level() < level) {
-    return;
-  }
-
-  print_timestamp(level);
-
-  if(extend) {
-    PRINTF("%s: (%zu bytes):\n", name, length);
-
-    while(length--) {
-      if (n % 16 == 0) {
-	PRINTF("%08X ", n);
-      }
-
-      PRINTF("%02X ", *buf++);
-
-      n++;
-      if(n % 8 == 0) {
-	if(n % 16 == 0) {
-	  PRINTF("\n");
-        } else {
-          PRINTF(" ");
-        }
-      }
-    }
-  } else {
-    PRINTF("%s: (%zu bytes): ", name, length);
-    while (length--) {
-      PRINTF("%02X", *buf++);
-    }
-  }
-  PRINTF("\n");
+  uiplib_ipaddr_print(&a->addr);
+  printf("]");
 }
 /*---------------------------------------------------------------------------*/
 int

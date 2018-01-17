@@ -2,10 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "dtls_debug.h"
 #include "dtls-crypto.h"
 
 #include "cbc_aes128-testdata.c"
+
+/* Log configuration */
+#define LOG_MODULE "cbc-aes128-test"
+#define LOG_LEVEL  LOG_LEVEL_DTLS
+#include "dtls-log.h"
 
 void 
 dump(unsigned char *buf, size_t len) {

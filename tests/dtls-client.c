@@ -16,8 +16,12 @@
 #include <netdb.h>
 #include <signal.h>
 
-#include "dtls_debug.h"
 #include "dtls.h"
+
+/* Log configuration */
+#define LOG_MODULE "dtls-client"
+#define LOG_LEVEL  LOG_LEVEL_DTLS
+#include "dtls-log.h"
 
 #define DEFAULT_PORT 20220
 
@@ -111,7 +115,7 @@ get_psk_info(struct dtls_context_t *ctx UNUSED_PARAM,
   switch (type) {
   case DTLS_PSK_IDENTITY:
     if (id_len) {
-      dtls_debug("got psk_identity_hint: '%.*s'\n", id_len, id);
+      dtls_debug("got psk_identity_hint: '%.*s'\n", (int)id_len, id);
     }
 
     if (result_length < psk_id_length) {
@@ -222,7 +226,9 @@ dtls_handle_read(struct dtls_context_t *ctx) {
     perror("recvfrom");
     return -1;
   } else {
-    dtls_dsrv_log_addr(DTLS_LOG_DEBUG, "peer", &session);
+    LOG_DBG("peer: ");
+    LOG_DBG_DTLS_ADDR(&session);
+    LOG_DBG_("\n");
     dtls_debug_dump("bytes from peer", buf, len);
   }
 
@@ -335,7 +341,6 @@ main(int argc, char **argv) {
   struct timeval timeout;
   unsigned short port = DEFAULT_PORT;
   char port_str[NI_MAXSERV] = "0";
-  log_t log_level = DTLS_LOG_WARN;
   int fd, result;
   int on = 1;
   int opt, res;
@@ -351,7 +356,7 @@ main(int argc, char **argv) {
   memcpy(psk_key, PSK_DEFAULT_KEY, psk_key_length);
 #endif /* DTLS_PSK */
 
-  while ((opt = getopt(argc, argv, "p:o:v:" PSK_OPTIONS)) != -1) {
+  while ((opt = getopt(argc, argv, "p:o:" PSK_OPTIONS)) != -1) {
     switch (opt) {
 #ifdef DTLS_PSK
     case 'i' : {
@@ -389,17 +394,12 @@ main(int argc, char **argv) {
 	memcpy(output_file.s, optarg, output_file.length + 1);
       }
       break;
-    case 'v' :
-      log_level = strtol(optarg, NULL, 10);
-      break;
     default:
       usage(argv[0], dtls_package_version());
       exit(1);
     }
   }
 
-  dtls_set_log_level(log_level);
-  
   if (argc <= optind) {
     usage(argv[0], dtls_package_version());
     exit(1);
