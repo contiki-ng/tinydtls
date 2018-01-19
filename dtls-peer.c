@@ -60,9 +60,7 @@ dtls_new_peer(const session_t *session) {
       return NULL;
     }
 
-    LOG_DBG("dtls_new_peer: ");
-    LOG_DBG_DTLS_ADDR(session);
-    LOG_DBG_("\n");
+    dtls_debug_session("dtls_new_peer", session);
   }
 
   return peer;

@@ -226,9 +226,7 @@ dtls_handle_read(struct dtls_context_t *ctx) {
     perror("recvfrom");
     return -1;
   } else {
-    LOG_DBG("peer: ");
-    LOG_DBG_DTLS_ADDR(&session);
-    LOG_DBG_("\n");
+    dtls_debug_session("peer", &session);
     dtls_debug_dump("bytes from peer", buf, len);
   }
 

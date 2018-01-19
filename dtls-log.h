@@ -102,4 +102,12 @@ dtls_debug_hexdump(const char *name, const unsigned char *buf, int len)
   LOG_DBG("\n");
 }
 
+static inline void
+dtls_debug_session(const char *name, const session_t *session)
+{
+  LOG_DBG("%s: ", name);
+  LOG_DBG_DTLS_ADDR(session);
+  LOG_DBG_("\n");
+}
+
 #endif /* DTLS_LOG_H_ */

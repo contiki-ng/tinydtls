@@ -1523,9 +1523,7 @@ static void dtls_destroy_peer(dtls_context_t *ctx, dtls_peer_t *peer, int unlink
     dtls_close(ctx, &peer->session);
   if (unlink) {
     delete_peer(&ctx->peers, peer);
-    LOG_DBG("removed peer: ");
-    LOG_DBG_DTLS_ADDR(&peer->session);
-    LOG_DBG_("\n");
+    dtls_debug_session("removed peer", &peer->session);
   }
   dtls_free_peer(peer);
 }
@@ -2942,9 +2940,7 @@ decrypt_verify(dtls_peer_t *peer, uint8_t *packet, size_t length,
     if (clen < 0)
       dtls_warn("decryption failed\n");
     else {
-#ifndef NDEBUG
-      printf("decrypt_verify(): found %i bytes cleartext\n", clen);
-#endif
+      dtls_debug("decrypt_verify(): found %i bytes cleartext\n", clen);
       dtls_security_params_free_other(peer);
       dtls_debug_dump("cleartext", *cleartext, clen);
     }
@@ -3540,13 +3536,7 @@ handle_alert(dtls_context_t *ctx, dtls_peer_t *peer,
 
     delete_peer(&ctx->peers, peer);
 
-#ifdef CONTIKI
-#if DEBUG && ! defined(NDEBUG)
-    PRINTF("removed peer ");
-    dtls_session_print(&peer->session);
-    PRINTF("\n");
-#endif /* DEBUG && ! defined(NDEBUG) */
-#endif /* CONTIKI */
+    dtls_debug_session("removed peer", &peer->session);
 
     free_peer = 1;
 
@@ -3623,9 +3613,7 @@ dtls_handle_message(dtls_context_t *ctx,
 
   if (!peer) {
     dtls_debug("dtls_handle_message: PEER NOT FOUND\n");
-    LOG_DBG("peer addr: ");
-    LOG_DBG_DTLS_ADDR(session);
-    LOG_DBG_("\n");
+    dtls_debug_session("peer addr", session);
   } else {
     dtls_debug("dtls_handle_message: FOUND PEER\n");
   }
