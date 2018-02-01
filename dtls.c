@@ -3395,13 +3395,11 @@ handle_handshake_msg(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
 		break;
 
 	default:
-		record_length = dtls_uint24_to_int(data+data_index+1);
 		res = handle_handshake_record(ctx, peer, session, role, state,
 				data, data_length);
 		return res;
 	}
 
-	return res;
 }
 
 static int
