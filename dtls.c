@@ -3376,10 +3376,6 @@ handle_handshake_msg(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
 	int record_length = 0;
 	int data_index = 0;
 
-	// Note that data_length includes the 13 header bytes although data points to the
-	//    bytes after the header. This is valid for hello_verify_request but not for
-	// server_hello
-
 	switch (data[0]) {
 
 	case DTLS_HT_SERVER_HELLO:
