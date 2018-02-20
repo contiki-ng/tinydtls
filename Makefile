@@ -17,7 +17,8 @@
 # the library's version
 VERSION:=0.8.6
 
-DTLS_SUPPORT ?= posix
+DTLS_SUPPORT   ?= posix
+LOG_LEVEL_DTLS ?= LOG_LEVEL_INFO
 
 # files and flags
 SOURCES = dtls.c dtls-crypto.c dtls-ccm.c dtls-hmac.c netq.c dtls-peer.c
@@ -25,7 +26,7 @@ SOURCES+= dtls-log.c
 SOURCES+= aes/rijndael.c ecc/ecc.c sha2/sha2.c $(DTLS_SUPPORT)/dtls-support.c
 OBJECTS:= $(SOURCES:.c=.o)
 # CFLAGS:=-Wall -pedantic -std=c99 -g -O2 -I. -I$(DTLS_SUPPORT)
-CFLAGS:=-Wall -std=c99 -g -O2 -I. -I$(DTLS_SUPPORT)
+CFLAGS:=-DLOG_LEVEL_DTLS=$(LOG_LEVEL_DTLS) -Wall -std=c99 -g -O2 -I. -I$(DTLS_SUPPORT)
 LIB:=libtinydtls.a
 LDFLAGS:=
 ARFLAGS:=cru
