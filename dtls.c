@@ -186,8 +186,11 @@ dtls_send_multi(dtls_context_t *ctx, dtls_peer_t *peer,
 static int
 dtls_send(dtls_context_t *ctx, dtls_peer_t *peer, unsigned char type,
 	  uint8_t *buf, size_t buflen) {
-  return dtls_send_multi(ctx, peer, dtls_security_params(peer), &peer->session,
-			 type, &buf, &buflen, 1);
+  if(peer) {
+    return dtls_send_multi(ctx, peer, dtls_security_params(peer),
+                           &peer->session, type, &buf, &buflen, 1);
+  }
+  return 0;
 }
 
 /**
@@ -198,12 +201,14 @@ static void dtls_stop_retransmission(dtls_context_t *context, dtls_peer_t *peer)
 dtls_peer_t *
 dtls_get_peer(const dtls_context_t *ctx, const session_t *session) {
   dtls_peer_t *p;
-  p = ctx->peers;
-  while(p) {
-    if (dtls_session_equals(&(p->session), session)) {
-      return p;
+  if(ctx && session) {
+    p = ctx->peers;
+    while(p) {
+      if (dtls_session_equals(&(p->session), session)) {
+        return p;
+      }
+      p = p->next;
     }
-    p = p->next;
   }
   return NULL;
 }
@@ -215,7 +220,9 @@ dtls_get_peer(const dtls_context_t *ctx, const session_t *session) {
  */
 static int
 dtls_add_peer(dtls_context_t *ctx, dtls_peer_t *peer) {
-  add_peer(&ctx->peers, peer);
+  if(peer) {
+    add_peer(&ctx->peers, peer);
+  }
   return 0;
 }
 
@@ -548,8 +555,13 @@ hs_attempt_with_existing_peer(uint8_t *msg, size_t msglen,
     return 0;
 }
 /** Dump out the cipher keys and IVs used for the symetric cipher. */
-static void dtls_debug_keyblock(dtls_security_parameters_t *config)
+static inline void
+dtls_debug_keyblock(dtls_security_parameters_t *config, dtls_peer_t *peer)
 {
+  if(!peer) {
+    return;
+  }
+
   dtls_debug("key_block (%d bytes):\n", dtls_kb_size(config, peer->role));
   dtls_debug_dump("  client_MAC_secret",
 		  dtls_kb_client_mac_secret(config, peer->role),
@@ -621,9 +633,13 @@ calculate_key_block(dtls_context_t *ctx,
 		    dtls_peer_type role) {
   unsigned char *pre_master_secret;
   int pre_master_len = 0;
-  dtls_security_parameters_t *security = dtls_security_params_next(peer);
+  dtls_security_parameters_t *security;
   uint8_t master_secret[DTLS_MASTER_SECRET_LENGTH];
 
+  if (!peer || !handshake) {
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+  }
+  security = dtls_security_params_next(peer);
   if (!security) {
     return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
   }
@@ -706,7 +722,7 @@ calculate_key_block(dtls_context_t *ctx,
 	   dtls_kb_size(security, role));
 
   memcpy(handshake->tmp.master_secret, master_secret, DTLS_MASTER_SECRET_LENGTH);
-  dtls_debug_keyblock(security);
+  dtls_debug_keyblock(security, peer);
 
   security->cipher = handshake->cipher;
   security->compression = handshake->compression;
@@ -800,7 +816,13 @@ dtls_check_tls_extension(dtls_peer_t *peer,
   int ext_client_cert_type = 0;
   int ext_server_cert_type = 0;
   int ext_ec_point_formats = 0;
-  dtls_handshake_parameters_t *handshake = peer->handshake_params;
+  dtls_handshake_parameters_t *handshake;
+
+  if (!peer || !peer->handshake_params) {
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+  }
+
+  handshake = peer->handshake_params;
 
   if (data_length < sizeof(uint16_t)) { 
     /* no tls extensions specified */
@@ -920,8 +942,17 @@ dtls_update_parameters(dtls_context_t *ctx,
 		       uint8_t *data, size_t data_length) {
   int i, j;
   int ok;
-  dtls_handshake_parameters_t *config = peer->handshake_params;
-  dtls_security_parameters_t *security = dtls_security_params(peer);
+  dtls_handshake_parameters_t *config;
+  dtls_security_parameters_t *security;
+
+  if (!peer) {
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+  }
+  config = peer->handshake_params;
+  if (!config) {
+    goto error;
+  }
+  security = dtls_security_params(peer);
 
   assert(config);
   assert(data_length > DTLS_HS_LENGTH + DTLS_CH_LENGTH);
@@ -1023,6 +1054,9 @@ static inline int
 check_client_keyexchange(dtls_context_t *ctx, 
 			 dtls_handshake_parameters_t *handshake,
 			 uint8_t *data, size_t length) {
+  if (!handshake) {
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+  }
 
 #ifdef DTLS_ECC
   if (is_tls_ecdhe_ecdsa_with_aes_128_ccm_8(handshake->cipher)) {
@@ -1128,6 +1162,10 @@ check_finished(dtls_context_t *ctx, dtls_peer_t *peer,
   if (data_length < DTLS_HS_LENGTH + DTLS_FIN_LENGTH)
     return dtls_alert_fatal_create(DTLS_ALERT_HANDSHAKE_FAILURE);
 
+  if (!peer || !peer->handshake_params) {
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+  }
+
   /* Use a union here to ensure that sufficient stack space is
    * reserved. As statebuf and verify_data are not used at the same
    * time, we can re-use the storage safely.
@@ -1227,7 +1265,7 @@ dtls_prepare_record(dtls_peer_t *peer, dtls_security_parameters_t *security,
       p += data_len_array[i];
       res += data_len_array[i];
     }
-  } else { /* TLS_PSK_WITH_AES_128_CCM_8 or TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8 */   
+  } else { /* TLS_PSK_WITH_AES_128_CCM_8 or TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8 */
     /** 
      * length of additional_data for the AEAD cipher which consists of
      * seq_num(2+6) + type(1) + version(2) + length(2)
@@ -1235,6 +1273,10 @@ dtls_prepare_record(dtls_peer_t *peer, dtls_security_parameters_t *security,
 #define A_DATA_LEN 13
     unsigned char nonce[DTLS_CCM_BLOCKSIZE];
     unsigned char A_DATA[A_DATA_LEN];
+
+    if(!peer) {
+      return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+    }
 
     if (is_tls_psk_with_aes_128_ccm_8(security->cipher)) {
       dtls_debug("dtls_prepare_record(): encrypt using TLS_PSK_WITH_AES_128_CCM_8\n");
@@ -1354,7 +1396,7 @@ dtls_send_handshake_msg_hash(dtls_context_t *ctx,
   dtls_set_handshake_header(header_type, peer, data_length, 0,
 			    data_length, buf);
 
-  if (add_hash) {
+  if (add_hash && peer && peer->handshake_params) {
     update_hs_hash(peer, buf, sizeof(buf));
   }
   data_array[i] = buf;
@@ -1362,7 +1404,7 @@ dtls_send_handshake_msg_hash(dtls_context_t *ctx,
   i++;
 
   if (data != NULL) {
-    if (add_hash) {
+    if (add_hash && peer && peer->handshake_params) {
       update_hs_hash(peer, data, data_length);
     }
     data_array[i] = data;
@@ -1381,6 +1423,9 @@ dtls_send_handshake_msg(dtls_context_t *ctx,
 			uint8_t header_type,
 			uint8_t *data, size_t data_length)
 {
+  if (!peer) {
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+  }
   return dtls_send_handshake_msg_hash(ctx, peer, &peer->session,
 				      header_type, data, data_length, 1);
 }
@@ -1519,6 +1564,9 @@ dtls_close(dtls_context_t *ctx, const session_t *remote) {
 
 static void dtls_destroy_peer(dtls_context_t *ctx, dtls_peer_t *peer, int unlink)
 {
+  if (ctx == NULL || peer == NULL) {
+    return;
+  }
   if (peer->state != DTLS_STATE_CLOSED && peer->state != DTLS_STATE_CLOSING)
     dtls_close(ctx, &peer->session);
   if (unlink) {
@@ -1703,12 +1751,17 @@ check_client_certificate_verify(dtls_context_t *ctx,
 				dtls_peer_t *peer,
 				uint8_t *data, size_t data_length)
 {
-  dtls_handshake_parameters_t *config = peer->handshake_params;
   int ret;
   unsigned char *result_r;
   unsigned char *result_s;
   dtls_hash_ctx hs_hash;
   unsigned char sha256hash[DTLS_HMAC_DIGEST_SIZE];
+  dtls_handshake_parameters_t *config;
+
+  if(!peer || !peer->handshake_params) {
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+  }
+  config = peer->handshake_params;
 
   assert(is_tls_ecdhe_ecdsa_with_aes_128_ccm_8(config->cipher));
 
@@ -1753,8 +1806,14 @@ dtls_send_server_hello(dtls_context_t *ctx, dtls_peer_t *peer)
   uint8_t *p;
   int ecdsa;
   uint8_t extension_size;
-  dtls_handshake_parameters_t *handshake = peer->handshake_params;
   dtls_tick_t now;
+  dtls_handshake_parameters_t *handshake;
+
+  if(!peer || !peer->handshake_params) {
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+  }
+
+  handshake = peer->handshake_params;
 
   ecdsa = is_tls_ecdhe_ecdsa_with_aes_128_ccm_8(handshake->cipher);
 
@@ -1944,9 +2003,14 @@ dtls_send_server_key_exchange_ecdh(dtls_context_t *ctx, dtls_peer_t *peer,
   uint8_t *ephemeral_pub_y;
   uint32_t point_r[9];
   uint32_t point_s[9];
-  dtls_handshake_parameters_t *config = peer->handshake_params;
+  dtls_handshake_parameters_t *config;
 
-  /* ServerKeyExchange 
+  if(!peer || !peer->handshake_params) {
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+  }
+  config = peer->handshake_params;
+
+  /* ServerKeyExchange
    *
    * Start message construction at beginning of buffer. */
   p = buf;
@@ -2092,6 +2156,10 @@ dtls_send_server_hello_msgs(dtls_context_t *ctx, dtls_peer_t *peer)
     return res;
   }
 
+  if(!peer || !peer->handshake_params) {
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+  }
+
 #ifdef DTLS_ECC
   if (is_tls_ecdhe_ecdsa_with_aes_128_ccm_8(peer->handshake_params->cipher)) {
     const dtls_ecdsa_key_t *ecdsa_key;
@@ -2176,7 +2244,12 @@ dtls_send_client_key_exchange(dtls_context_t *ctx, dtls_peer_t *peer)
 {
   uint8_t buf[DTLS_CKXEC_LENGTH];
   uint8_t *p;
-  dtls_handshake_parameters_t *handshake = peer->handshake_params;
+  dtls_handshake_parameters_t *handshake;
+
+  if(!peer || !peer->handshake_params) {
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+  }
+  handshake = peer->handshake_params;
 
   p = buf;
 
@@ -2261,7 +2334,11 @@ dtls_send_certificate_verify_ecdh(dtls_context_t *ctx, dtls_peer_t *peer,
   dtls_hash_ctx hs_hash;
   unsigned char sha256hash[DTLS_HMAC_DIGEST_SIZE];
 
-  /* ServerKeyExchange 
+  if (!peer || !peer->handshake_params) {
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+  }
+
+  /* ServerKeyExchange
    *
    * Start message construction at beginning of buffer. */
   p = buf;
@@ -2294,6 +2371,10 @@ dtls_send_finished(dtls_context_t *ctx, dtls_peer_t *peer,
   dtls_hash_ctx hs_hash;
   uint8_t *p = buf;
 
+  if (!peer || !peer->handshake_params) {
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+  }
+
   copy_hs_hash(peer, &hs_hash);
 
   length = dtls_hash_finalize(hash, &hs_hash);
@@ -2324,8 +2405,13 @@ dtls_send_client_hello(dtls_context_t *ctx, dtls_peer_t *peer,
   uint8_t extension_size;
   int psk;
   int ecdsa;
-  dtls_handshake_parameters_t *handshake = peer->handshake_params;
   dtls_tick_t now;
+  dtls_handshake_parameters_t *handshake;
+
+  if (!peer || !peer->handshake_params) {
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+  }
+  handshake = peer->handshake_params;
 
   psk = is_psk_supported(ctx);
   ecdsa = is_ecdsa_supported(ctx, 1);
@@ -2472,15 +2558,21 @@ check_server_hello(dtls_context_t *ctx,
 		      dtls_peer_t *peer,
 		      uint8_t *data, size_t data_length)
 {
-  dtls_handshake_parameters_t *handshake = peer->handshake_params;
+  dtls_handshake_parameters_t *handshake;
 
   /* This function is called when we expect a ServerHello (i.e. we
    * have sent a ClientHello).  We might instead receive a HelloVerify
    * request containing a cookie. If so, we must repeat the
    * ClientHello with the given Cookie.
    */
-  if (data_length < DTLS_HS_LENGTH + DTLS_HS_LENGTH)
+  if (data_length < DTLS_HS_LENGTH + DTLS_HS_LENGTH) {
     return dtls_alert_fatal_create(DTLS_ALERT_DECODE_ERROR);
+  }
+
+  if (!peer || !peer->handshake_params) {
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+  }
+  handshake = peer->handshake_params;
 
   update_hs_hash(peer, data, data_length);
 
@@ -2565,7 +2657,12 @@ check_server_certificate(dtls_context_t *ctx,
 			 uint8_t *data, size_t data_length)
 {
   int err;
-  dtls_handshake_parameters_t *config = peer->handshake_params;
+  dtls_handshake_parameters_t *config;
+
+  if (!peer || !peer->handshake_params) {
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+  }
+  config = peer->handshake_params;
 
   update_hs_hash(peer, data, data_length);
 
@@ -2611,11 +2708,16 @@ check_server_key_exchange_ecdsa(dtls_context_t *ctx,
 				dtls_peer_t *peer,
 				uint8_t *data, size_t data_length)
 {
-  dtls_handshake_parameters_t *config = peer->handshake_params;
   int ret;
   unsigned char *result_r;
   unsigned char *result_s;
   unsigned char *key_params;
+  dtls_handshake_parameters_t *config;
+
+  if (!peer || !peer->handshake_params) {
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+  }
+  config = peer->handshake_params;
 
   update_hs_hash(peer, data, data_length);
 
@@ -2694,8 +2796,13 @@ check_server_key_exchange_psk(dtls_context_t *ctx,
 			      dtls_peer_t *peer,
 			      uint8_t *data, size_t data_length)
 {
-  dtls_handshake_parameters_t *config = peer->handshake_params;
+  dtls_handshake_parameters_t *config;
   uint16_t len;
+
+  if (!peer || !peer->handshake_params) {
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+  }
+  config = peer->handshake_params;
 
   update_hs_hash(peer, data, data_length);
 
@@ -2737,6 +2844,10 @@ check_certificate_request(dtls_context_t *ctx,
   int auth_alg;
   int sig_alg;
   int hash_alg;
+
+  if (!peer || !peer->handshake_params) {
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+  }
 
   update_hs_hash(peer, data, data_length);
 
@@ -2811,12 +2922,16 @@ check_server_hellodone(dtls_context_t *ctx,
 		      dtls_peer_t *peer,
 		      uint8_t *data, size_t data_length)
 {
+  dtls_handshake_parameters_t *handshake;
   int res;
 #ifdef DTLS_ECC
   const dtls_ecdsa_key_t *ecdsa_key;
 #endif /* DTLS_ECC */
 
-  dtls_handshake_parameters_t *handshake = peer->handshake_params;
+  if (!peer || !peer->handshake_params) {
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+  }
+  handshake = peer->handshake_params;
 
   /* calculate master key, send CCS */
 
@@ -2884,9 +2999,14 @@ decrypt_verify(dtls_peer_t *peer, uint8_t *packet, size_t length,
 	       uint8_t **cleartext)
 {
   dtls_record_header_t *header = DTLS_RECORD_HEADER(packet);
-  dtls_security_parameters_t *security = dtls_security_params_epoch(peer, dtls_get_epoch(header));
+  dtls_security_parameters_t *security;
   int clen;
-  
+
+  if (!peer) {
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+  }
+  security = dtls_security_params_epoch(peer, dtls_get_epoch(header));
+
   *cleartext = (uint8_t *)packet + sizeof(dtls_record_header_t);
   clen = length - sizeof(dtls_record_header_t);
 
@@ -2951,6 +3071,9 @@ decrypt_verify(dtls_peer_t *peer, uint8_t *packet, size_t length,
 static int
 dtls_send_hello_request(dtls_context_t *ctx, dtls_peer_t *peer)
 {
+  if (!peer) {
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+  }
   return dtls_send_handshake_msg_hash(ctx, peer, &peer->session,
 				      DTLS_HT_HELLO_REQUEST,
 				      NULL, 0, 0);
@@ -3038,6 +3161,10 @@ handle_handshake_msg(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
       return dtls_alert_fatal_create(DTLS_ALERT_UNEXPECTED_MESSAGE);
     }
 
+    if(!peer || !peer->handshake_params) {
+      return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+    }
+
     err = check_server_hello(ctx, peer, data, data_length);
     if (err < 0) {
       dtls_warn("error in check_server_hello err: %i\n", err);
@@ -3058,6 +3185,11 @@ handle_handshake_msg(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
         (role == DTLS_SERVER && state != DTLS_STATE_WAIT_CLIENTCERTIFICATE)) {
       return dtls_alert_fatal_create(DTLS_ALERT_UNEXPECTED_MESSAGE);
     }
+
+    if(!peer) {
+      return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+    }
+
     err = check_server_certificate(ctx, peer, data, data_length);
     if (err < 0) {
       dtls_warn("error in check_server_certificate err: %i\n", err);
@@ -3074,6 +3206,10 @@ handle_handshake_msg(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
 #endif /* DTLS_ECC */
 
   case DTLS_HT_SERVER_KEY_EXCHANGE:
+
+    if(!peer || !peer->handshake_params) {
+      return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+    }
 
 #ifdef DTLS_ECC
     if (is_tls_ecdhe_ecdsa_with_aes_128_ccm_8(peer->handshake_params->cipher)) {
@@ -3107,6 +3243,10 @@ handle_handshake_msg(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
       return dtls_alert_fatal_create(DTLS_ALERT_UNEXPECTED_MESSAGE);
     }
 
+    if(!peer) {
+      return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+    }
+
     err = check_server_hellodone(ctx, peer, data, data_length);
     if (err < 0) {
       dtls_warn("error in check_server_hellodone err: %i\n", err);
@@ -3136,6 +3276,10 @@ handle_handshake_msg(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
 
     if (state != DTLS_STATE_WAIT_FINISHED) {
       return dtls_alert_fatal_create(DTLS_ALERT_UNEXPECTED_MESSAGE);
+    }
+
+    if(!peer || !peer->handshake_params) {
+      return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
     }
 
     err = check_finished(ctx, peer, data, data_length);
@@ -3181,6 +3325,10 @@ handle_handshake_msg(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
       return dtls_alert_fatal_create(DTLS_ALERT_UNEXPECTED_MESSAGE);
     }
 
+    if(!peer || !peer->handshake_params) {
+      return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+    }
+
     err = check_client_keyexchange(ctx, peer->handshake_params, data, data_length);
     if (err < 0) {
       dtls_warn("error in check_client_keyexchange err: %i\n", err);
@@ -3200,6 +3348,10 @@ handle_handshake_msg(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
 
     if (state != DTLS_STATE_WAIT_CERTIFICATEVERIFY) {
       return dtls_alert_fatal_create(DTLS_ALERT_UNEXPECTED_MESSAGE);
+    }
+
+    if(!peer || !peer->handshake_params) {
+      return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
     }
 
     err = check_client_certificate_verify(ctx, peer, data, data_length);
@@ -3279,7 +3431,7 @@ handle_handshake_msg(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
         return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
       }
     }
-    if (peer && !peer->handshake_params) {
+    if (!peer->handshake_params) {
       dtls_handshake_header_t *hs_header = DTLS_HANDSHAKE_HEADER(data);
 
       peer->handshake_params = dtls_handshake_new();
@@ -3331,7 +3483,11 @@ handle_handshake_msg(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
       return 0;
     }
 
-    if (peer && !peer->handshake_params) {
+    if(!peer) {
+      return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+    }
+
+    if (!peer->handshake_params) {
       peer->handshake_params = dtls_handshake_new();
       if (!peer->handshake_params)
         return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
@@ -3476,14 +3632,13 @@ handle_ccs(dtls_context_t *ctx, dtls_peer_t *peer,
 	   uint8_t *record_header, uint8_t *data, size_t data_length)
 {
   int err;
-  dtls_handshake_parameters_t *handshake = peer->handshake_params;
 
   /* A CCS message is handled after a KeyExchange message was
    * received from the client. When security parameters have been
    * updated successfully and a ChangeCipherSpec message was sent
    * by ourself, the security context is switched and the record
    * sequence number is reset. */
-  
+
   if (!peer || peer->state != DTLS_STATE_WAIT_CHANGECIPHERSPEC) {
     dtls_warn("expected ChangeCipherSpec during handshake\n");
     return 0;
@@ -3494,7 +3649,7 @@ handle_ccs(dtls_context_t *ctx, dtls_peer_t *peer,
 
   /* Just change the cipher when we are on the same epoch */
   if (peer->role == DTLS_SERVER) {
-    err = calculate_key_block(ctx, handshake, peer,
+    err = calculate_key_block(ctx, peer->handshake_params, peer,
 			      &peer->session, peer->role);
     if (err < 0) {
       return err;
@@ -3673,9 +3828,11 @@ dtls_handle_message(dtls_context_t *ctx,
 	dtls_warn("error while handling ChangeCipherSpec message\n");
 	dtls_alert_send_from_err(ctx, peer, session, err);
 
-	/* invalidate peer */
-	dtls_destroy_peer(ctx, peer, 1);
-	peer = NULL;
+        /* invalidate peer */
+        if(peer) {
+          dtls_destroy_peer(ctx, peer, 1);
+        }
+        peer = NULL;
 
 	return err;
       }
@@ -3698,7 +3855,7 @@ dtls_handle_message(dtls_context_t *ctx,
       /* Handshake messages other than Finish must use the current
        * epoch, Finish has epoch + 1. */
 
-      if (peer) {
+      if (peer && dtls_security_params(peer)) {
 	uint16_t expected_epoch = dtls_security_params(peer)->epoch;
 	uint16_t msg_epoch = 
 	  dtls_uint16_to_int(DTLS_RECORD_HEADER(msg)->epoch);
@@ -3887,7 +4044,7 @@ dtls_retransmit(dtls_context_t *context, netq_t *node) {
     return;
 
   /* re-initialize timeout when maximum number of retransmissions are not reached yet */
-  if (node->retransmit_cnt < DTLS_DEFAULT_MAX_RETRANSMIT) {
+  if (node->retransmit_cnt < DTLS_DEFAULT_MAX_RETRANSMIT && node->peer) {
       unsigned char sendbuf[DTLS_MAX_BUF];
       size_t len = sizeof(sendbuf);
       int err;
@@ -3935,8 +4092,12 @@ dtls_retransmit(dtls_context_t *context, netq_t *node) {
 static void
 dtls_stop_retransmission(dtls_context_t *context, dtls_peer_t *peer) {
   netq_t *node;
-  node = netq_head(&context->sendqueue); 
 
+  if(peer == NULL) {
+    return;
+  }
+
+  node = netq_head(&context->sendqueue);
   while (node) {
     if (dtls_session_equals(&node->peer->session, &peer->session)) {
       netq_t *tmp = node;
