@@ -30,7 +30,7 @@
 #include "lib/memb.h"
 
 /* Log configuration */
-#define LOG_MODULE "netq"
+#define LOG_MODULE "dtls-netq"
 #define LOG_LEVEL  LOG_LEVEL_DTLS
 #include "dtls-log.h"
 
