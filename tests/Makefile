@@ -13,7 +13,8 @@
 #    Olaf Bergmann  - initial API and implementation
 #
 
-DTLS_SUPPORT ?= posix
+DTLS_SUPPORT   ?= posix
+LOG_LEVEL_DTLS ?= LOG_LEVEL_INFO
 
 # files and flags
 SOURCES:= dtls-server.c ccm-test.c prf-test.c dtls-client.c
@@ -23,7 +24,7 @@ LIB:=../libtinydtls.a
 
 OBJECTS := $(patsubst %.c, %.o, $(SOURCES))
 
-CFLAGS  := -I. -I.. -I../$(DTLS_SUPPORT)
+CFLAGS  := -DLOG_LEVEL_DTLS=$(LOG_LEVEL_DTLS) -I. -I.. -I../$(DTLS_SUPPORT)
 LDFLAGS := -L..
 LDLIBS  := -ltinydtls
 

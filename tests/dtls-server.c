@@ -240,8 +240,7 @@ usage(const char *program, const char *version) {
 	  "(c) 2011-2014 Olaf Bergmann <bergmann@tzi.org>\n\n"
 	  "usage: %s [-A address] [-p port] [-v num]\n"
 	  "\t-A address\t\tlisten on specified address (default is ::)\n"
-	  "\t-p port\t\tlisten on specified port (default is %d)\n"
-	  "\t-v num\t\tverbosity level (default: 3)\n",
+	  "\t-p port\t\tlisten on specified port (default is %d)\n",
 	   program, version, program, DEFAULT_PORT);
 }
 

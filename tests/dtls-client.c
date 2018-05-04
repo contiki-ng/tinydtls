@@ -305,8 +305,7 @@ usage( const char *program, const char *version) {
 	  "\t-k file\t\tread pre-shared key from file\n"
 #endif /* DTLS_PSK */
 	  "\t-o file\t\toutput received data to this file (use '-' for STDOUT)\n"
-	  "\t-p port\t\tlisten on specified port (default is %d)\n"
-	  "\t-v num\t\tverbosity level (default: 3)\n",
+	  "\t-p port\t\tlisten on specified port (default is %d)\n",
 	   program, version, program, DEFAULT_PORT);
 }
 
