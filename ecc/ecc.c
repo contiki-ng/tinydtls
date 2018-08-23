@@ -531,7 +531,7 @@ void ecc_ec_mult(const uint32_t *px, const uint32_t *py, const uint32_t *secret,
  *   0: everything is ok
  *  -1: can not create signature, try again with different k.
  */
-int ecc_ecdsa_sign(const uint32_t *d, const uint32_t *e, const uint32_t *k, uint32_t *r, uint32_t *s)
+int ecc_ecdsa_sign_hash(const uint32_t *d, const uint32_t *e, const uint32_t *k, uint32_t *r, uint32_t *s)
 {
 	uint32_t tmp1[16];
 	uint32_t tmp2[9];

@@ -50,7 +50,7 @@ static inline void ecc_ecdh(const uint32_t *px, const uint32_t *py, const uint32
 	ecc_ec_mult(px, py, secret, resultx, resulty);
 }
 int ecc_ecdsa_validate(const uint32_t *x, const uint32_t *y, const uint32_t *e, const uint32_t *r, const uint32_t *s);
-int ecc_ecdsa_sign(const uint32_t *d, const uint32_t *e, const uint32_t *k, uint32_t *r, uint32_t *s);
+int ecc_ecdsa_sign_hash(const uint32_t *d, const uint32_t *e, const uint32_t *k, uint32_t *r, uint32_t *s);
 
 int ecc_is_valid_key(const uint32_t * priv_key);
 static inline void ecc_gen_pub_key(const uint32_t *priv_key, uint32_t *pub_x, uint32_t *pub_y)

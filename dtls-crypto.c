@@ -402,7 +402,7 @@ dtls_ecdsa_create_sig_hash(const unsigned char *priv_key, size_t key_size,
   dtls_ec_key_to_uint32(sign_hash, sign_hash_size, hash);
   do {
     dtls_fill_random((uint8_t *)rand, key_size);
-    ret = ecc_ecdsa_sign(priv, hash, rand, point_r, point_s);
+    ret = ecc_ecdsa_sign_hash(priv, hash, rand, point_r, point_s);
   } while (ret);
 }
 
