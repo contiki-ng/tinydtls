@@ -176,7 +176,7 @@ void ecdsaTest() {
 
 	ecc_ec_mult(BasePointx, BasePointy, ecdsaTestSecret, pub_x, pub_y);
 
-	ret = ecc_ecdsa_sign(ecdsaTestSecret, ecdsaTestMessage, ecdsaTestRand1, tempx, tempy);
+	ret = ecc_ecdsa_sign_hash(ecdsaTestSecret, ecdsaTestMessage, ecdsaTestRand1, tempx, tempy);
 	assert(ecc_isSame(tempx, ecdsaTestresultR1, arrayLength));
 	assert(ecc_isSame(tempy, ecdsaTestresultS1, arrayLength));
 	assert(ret == 0);
@@ -185,7 +185,7 @@ void ecdsaTest() {
 	assert(!ret);
 
 
-	ret = ecc_ecdsa_sign(ecdsaTestSecret, ecdsaTestMessage, ecdsaTestRand2, tempx, tempy);
+	ret = ecc_ecdsa_sign_hash(ecdsaTestSecret, ecdsaTestMessage, ecdsaTestRand2, tempx, tempy);
 	assert(ecc_isSame(tempx, ecdsaTestresultR2, arrayLength));
 	assert(ecc_isSame(tempy, ecdsaTestresultS2, arrayLength));
 	assert(ret == 0);
