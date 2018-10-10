@@ -3116,11 +3116,13 @@ dtls_renegotiate(dtls_context_t *ctx, const session_t *dst)
 }
 
 static int
-handle_handshake_msg(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
+handle_handshake_record(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
 		 const dtls_peer_type role, const dtls_state_t state,
 		 uint8_t *data, size_t data_length) {
 
   int err = 0;
+
+  dtls_debug_dump("handle_handshake_record", data, data_length);	//AD
 
   /* This will clear the retransmission buffer if we get an expected
    * handshake message. We have to make sure that no handshake message
@@ -3221,7 +3223,7 @@ handle_handshake_msg(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
 #endif /* DTLS_ECC */
 #ifdef DTLS_PSK
     if (is_tls_psk_with_aes_128_ccm_8(peer->handshake_params->cipher)) {
-      if (state != DTLS_STATE_WAIT_SERVERHELLODONE) {
+        if (peer->state != DTLS_STATE_WAIT_SERVERHELLODONE) {
         return dtls_alert_fatal_create(DTLS_ALERT_UNEXPECTED_MESSAGE);
       }
       err = check_server_key_exchange_psk(ctx, peer, data, data_length);
@@ -3239,7 +3241,7 @@ handle_handshake_msg(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
 
   case DTLS_HT_SERVER_HELLO_DONE:
 
-    if (state != DTLS_STATE_WAIT_SERVERHELLODONE) {
+	if (peer->state != DTLS_STATE_WAIT_SERVERHELLODONE) {
       return dtls_alert_fatal_create(DTLS_ALERT_UNEXPECTED_MESSAGE);
     }
 
@@ -3516,7 +3518,42 @@ handle_handshake_msg(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
 
   return err;
 }
-      
+
+/*
+ * Handle handshake messages concatenated into a single record layer message.
+ * Currently only handling a flight starting with server_hello.
+ * Consider to generalize for all types of messages.
+ */
+static int
+handle_handshake_msg(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
+		const dtls_peer_type role, const dtls_state_t state,
+		uint8_t *data, size_t data_length) {
+	int res = 0;
+	int record_length = 0;
+	int data_index = 0;
+
+	switch (data[0]) {
+
+	case DTLS_HT_SERVER_HELLO:
+		while(data_index < data_length) {
+			record_length = dtls_uint24_to_int(data+data_index+1) + DTLS_HS_LENGTH;
+			res = handle_handshake_record(ctx, peer, session, role, state,
+					data+data_index, record_length);
+			if (res < 0)
+				return res;
+			data_index = data_index + record_length;
+		}
+		return res;
+		break;
+
+	default:
+		res = handle_handshake_record(ctx, peer, session, role, state,
+				data, data_length);
+		return res;
+	}
+
+}
+
 static int
 handle_handshake(dtls_context_t *ctx, dtls_peer_t *peer, session_t *session,
 		 const dtls_peer_type role, const dtls_state_t state,
