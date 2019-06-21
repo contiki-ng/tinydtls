@@ -134,6 +134,7 @@ static const unsigned char prf_label_server[] = "server";
 static const unsigned char prf_label_finished[] = " finished";
 
 /* first part of Raw public key, the is the start of the Subject Public Key */
+#ifdef DTLS_ECC
 static const unsigned char cert_asn1_header[] = {
   0x30, 0x59, /* SEQUENCE, length 89 bytes */
     0x30, 0x13, /* SEQUENCE, length 19 bytes */
@@ -144,6 +145,7 @@ static const unsigned char cert_asn1_header[] = {
       0x03, 0x42, 0x00, /* BIT STRING, length 66 bytes, 0 bits unused */
          0x04 /* uncompressed, followed by the r und s values of the public key */
 };
+#endif
 
 void
 dtls_init() {

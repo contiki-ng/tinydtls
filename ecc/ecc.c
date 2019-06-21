@@ -40,6 +40,8 @@
 #include "ecc.h"
 #include <string.h>
 
+#ifdef DTLS_ECC
+
 static uint32_t add( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length){
 	uint64_t d = 0; //carry
 	int v = 0;
@@ -632,6 +634,7 @@ int ecc_is_valid_key(const uint32_t * priv_key)
 {
 	return isGreater(ecc_order_m, priv_key, arrayLength) == 1;
 }
+#endif
 
 /*
  * This exports the low level functions so the tests can use them.

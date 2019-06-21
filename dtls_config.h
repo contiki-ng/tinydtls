@@ -2,12 +2,6 @@
 /* Define if building universal (internal helper macro) */
 /* #undef AC_APPLE_UNIVERSAL_BUILD */
 
-/* Define to 1 if building with ECC support. */
-#define DTLS_ECC 1
-
-/* Define to 1 if building with PSK support */
-#define DTLS_PSK 1
-
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 /* #undef HAVE_ARPA_INET_H */
 
@@ -143,7 +137,7 @@
 #endif
 
 /** Defined to 1 if tinydtls is built with support for ECC */
-#define DTLS_ECC 1
+/* #define DTLS_ECC 1 */
 
 /** Defined to 1 if tinydtls is built with support for PSK */
 #define DTLS_PSK 1
