@@ -68,7 +68,7 @@ dtls_session_get_address_size(const session_t *a)
 }
 /*---------------------------------------------------------------------------*/
 void
-dtls_session_log(const session_t *addr)
+dtls_session_log(const session_t *a)
 {
   LOG_OUTPUT("[");
   log_6addr(&a->addr);
@@ -76,7 +76,7 @@ dtls_session_log(const session_t *addr)
 }
 /*---------------------------------------------------------------------------*/
 void
-dtls_session_print(const session_t *addr)
+dtls_session_print(const session_t *a)
 {
   printf("[");
   uiplib_ipaddr_print(&a->addr);
