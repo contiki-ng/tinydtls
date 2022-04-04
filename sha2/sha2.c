@@ -598,7 +598,7 @@ void dtls_sha256_update(dtls_sha256_ctx* context, const sha2_byte *data, size_t 
 	usedspace = freespace = 0;
 }
 
-void dtls_sha256_final(sha2_byte digest[], dtls_sha256_ctx* context) {
+void dtls_sha256_final(sha2_byte digest[DTLS_SHA256_DIGEST_LENGTH], dtls_sha256_ctx* context) {
 	sha2_word32	*d = (sha2_word32*)digest;
 	unsigned int	usedspace;
 
@@ -661,7 +661,7 @@ void dtls_sha256_final(sha2_byte digest[], dtls_sha256_ctx* context) {
 	usedspace = 0;
 }
 
-char *dtls_sha256_end(dtls_sha256_ctx* context, char buffer[]) {
+char *dtls_sha256_end(dtls_sha256_ctx* context, char buffer[DTLS_SHA256_DIGEST_STRING_LENGTH]) {
 	sha2_byte	digest[DTLS_SHA256_DIGEST_LENGTH], *d = digest;
 	int		i;
 
